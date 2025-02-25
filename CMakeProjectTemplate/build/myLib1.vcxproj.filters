@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\matve\Desktop\С++\CMake_tests\CMake_test3\source\my_libs\foo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\matve\Desktop\С++\CMake_tests\CMake_test3\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{1C684670-E795-3331-BFEA-E0D2019A2026}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

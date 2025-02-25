@@ -1,0 +1,10 @@
+^C:\USERS\MATVE\DESKTOP\С++\CMAKE_TESTS\CMAKE_TEST3\BUILD\CMAKEFILES\28179317AD8E48455C32AD75A423D82A\GENERATE.STAMP.RULE
+setlocal
+D:\Cmake\bin\cmake.exe -SC:/Users/matve/Desktop/С++/CMake_tests/CMake_test3 -BC:/Users/matve/Desktop/С++/CMake_tests/CMake_test3/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/matve/Desktop/С++/CMake_tests/CMake_test3/build/MyProject.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

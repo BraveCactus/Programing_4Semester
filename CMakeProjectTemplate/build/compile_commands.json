@@ -1,0 +1,14 @@
+[
+{
+  "directory": "C:/Users/matve/Desktop/С++/CMakeProjectTemplate/build",
+  "command": "C:\\mingw\\mingw64\\bin\\g++.exe  @CMakeFiles/myLib2.dir/includes_CXX.rsp -g -std=gnu++11 -o CMakeFiles\\myLib2.dir\\source\\my_libs\\sum.cpp.obj -c C:\\Users\\matve\\Desktop\\С++\\CMakeProjectTemplate\\source\\my_libs\\sum.cpp",
+  "file": "C:/Users/matve/Desktop/С++/CMakeProjectTemplate/source/my_libs/sum.cpp",
+  "output": "CMakeFiles/myLib2.dir/source/my_libs/sum.cpp.obj"
+},
+{
+  "directory": "C:/Users/matve/Desktop/С++/CMakeProjectTemplate/build",
+  "command": "C:\\mingw\\mingw64\\bin\\g++.exe  @CMakeFiles/MyExe.dir/includes_CXX.rsp -g -std=gnu++11 -o CMakeFiles\\MyExe.dir\\source\\main.cpp.obj -c C:\\Users\\matve\\Desktop\\С++\\CMakeProjectTemplate\\source\\main.cpp",
+  "file": "C:/Users/matve/Desktop/С++/CMakeProjectTemplate/source/main.cpp",
+  "output": "CMakeFiles/MyExe.dir/source/main.cpp.obj"
+}
+]

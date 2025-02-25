@@ -1,0 +1,4 @@
+C:/Users/matve/Desktop/С++/CMakeProjectTemplate/build/CMakeFiles/myLib2.dir
+C:/Users/matve/Desktop/С++/CMakeProjectTemplate/build/CMakeFiles/MyExe.dir
+C:/Users/matve/Desktop/С++/CMakeProjectTemplate/build/CMakeFiles/edit_cache.dir
+C:/Users/matve/Desktop/С++/CMakeProjectTemplate/build/CMakeFiles/rebuild_cache.dir

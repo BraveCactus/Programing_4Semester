@@ -1,0 +1,2 @@
+C:\mingw\mingw64\bin\ar.exe qc libmyLib1.a CMakeFiles/myLib1.dir/source/my_libs/foo.cpp.obj
+C:\mingw\mingw64\bin\ranlib.exe libmyLib1.a
