@@ -1,0 +1,10 @@
+^C:\USERS\MATVE\DESKTOP\PROGRAMING_4SEMESTER\C++_PRACTICUM\SIMPLECODE_OOP\BUILD\CMAKEFILES\FF9DD455FB9B6EB656165CDB4137E13A\GENERATE.STAMP.RULE
+setlocal
+D:\Cmake\bin\cmake.exe -SC:/Users/matve/Desktop/Programing_4Semester/C++_Practicum/SimpleCode_OOP -BC:/Users/matve/Desktop/Programing_4Semester/C++_Practicum/SimpleCode_OOP/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/matve/Desktop/Programing_4Semester/C++_Practicum/SimpleCode_OOP/build/MyProject.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

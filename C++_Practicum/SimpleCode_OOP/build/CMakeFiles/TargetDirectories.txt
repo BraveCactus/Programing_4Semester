@@ -1,0 +1,3 @@
+C:/Users/matve/Desktop/Programing_4Semester/C++_Practicum/SimpleCode_OOP/build/CMakeFiles/Lesson_2.dir
+C:/Users/matve/Desktop/Programing_4Semester/C++_Practicum/SimpleCode_OOP/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/matve/Desktop/Programing_4Semester/C++_Practicum/SimpleCode_OOP/build/CMakeFiles/ZERO_CHECK.dir
