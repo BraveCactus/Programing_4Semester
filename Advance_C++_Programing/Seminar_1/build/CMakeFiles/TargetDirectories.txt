@@ -1,0 +1,2 @@
+C:/Users/matve/Desktop/С++/ПП_C++/build/CMakeFiles/edit_cache.dir
+C:/Users/matve/Desktop/С++/ПП_C++/build/CMakeFiles/rebuild_cache.dir
