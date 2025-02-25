@@ -1,54 +1,54 @@
-//Умные указатели
+
+
 
 template <typename T>
-class MyUnique{
+class MyUnique {
     T* ptr_ = nullptr;
-    
-    MyUnique(const MyUnique&) = delete;
+
+
+    MyUnique(const MyUnique&)            = delete;
     MyUnique& operator=(const MyUnique&) = delete;
 
 public:
-
     MyUnique(T*&& new_ptr) : ptr_{new_ptr} {}
-    // MyUnique operator= {const MyUnique} = delete;
-    T* operator->(){
+    T* operator->() const {
         return ptr_;
     }
-
-    const T* operator->() const {
-        return ptr_;
+    T& operator*() const {
+        return *ptr_;
     }
-
 };
 
-class MyClass{
+class MyClass {
 public:
     int a;
-    MyClass{int  v} : a{v} {};
+    MyClass(int v) : a{v} {}
 };
 
 template <typename T, typename... Args>
-MyUnique<T> MakeUnique(Args... args){
-    return MakeUnique<T> {new T{args...}};
+MyUnique<T> MakeUnique(Args... args) {
+    return MyUnique<T>{new T(args...)};
 }
 
-MyUnique<MyClass> gl_value = new MyClass;
 
-auto other_ptr = new MyClass;
+MyUnique<MyClass> gl_value = new MyClass(7);
 
-auto made_ptr = MakeUnique<MyClass>();
+auto other_ptr = new MyClass(5);
+// MyUnique<MyClass> other_value = other_ptr;
+// MyUnique<int> value2 = value;
+auto made_ptr = MakeUnique<MyClass>(20);
 
-class OtherClass{
+class OtherClass {
 public:
-    MyUnique<MyClass> value = new MyClass;
+    MyUnique<MyClass> value = new MyClass(3);
 };
 
-MyUnique<MyClass> value = new MyClass;
-// MyUnique<int> value2 = value;
-
-int main(){
+int main() {
     const OtherClass smth;
-    auto val = smth.value->a;
-    // smth.value->a = 7;
+    auto             val = smth.value->a;
+    smth.value->a        = 7;
+    (*smth.value).a      = 5;
+    (*gl_value).a        = 10;
+    // value = value2;
+    gl_value->a = 6;
 }
-
