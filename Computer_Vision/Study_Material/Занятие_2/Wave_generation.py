@@ -17,9 +17,4 @@ x, y = generate_sine_wave(2, SAMPLE_RATE, DURATION)
 plt.plot(x, y)
 plt.show()
 
-# image = cv2.imrad('robots2.jpg')
-# image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-# fig, ax = plt.subplots(1, 1, figsize = (12, 8))
-# ax.imshow(image)
 plt.show()
