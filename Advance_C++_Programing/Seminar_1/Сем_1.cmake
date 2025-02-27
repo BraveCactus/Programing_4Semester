@@ -4,11 +4,5 @@ set(PROJECT, shapelib)
 
 project(SiPROJECT)
 
-set(SOURCES){
-    
-}
 
-set(HEADERS){
-    
-}
 
