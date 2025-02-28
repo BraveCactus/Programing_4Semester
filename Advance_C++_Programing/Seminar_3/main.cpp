@@ -1,6 +1,3 @@
-
-
-
 template <typename T>
 class MyUnique {
     T* ptr_ = nullptr;
