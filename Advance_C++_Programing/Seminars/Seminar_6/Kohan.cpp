@@ -7,6 +7,25 @@ using namespace std;
 //Сравнить с обычной суммой
 
 template<typename T> 
+T myKohan_arr(T sum_previous, vector<T> input, T& comp){    
+    
+    T result_sum = 0;
+
+    for (int i = 0; i < input.size(); i++)
+    {
+        T y = input[i] - comp;
+
+        //Сумма
+        result_sum = sum_previous + y;
+
+        //Пересчитываем компенсацию
+        comp = (result_sum - sum_previous) - y;
+    }   
+
+    return result_sum;
+}
+
+template<typename T> 
 T myKohan(T sum_previous, T input, T& comp){     
 
     T y = input - comp;
@@ -34,9 +53,6 @@ int main(){
     float kohanSum = 0;
     float simpleSum = 0;
 
-
-    // for(auto x: data){
-    //     simpleSum += x;
-
-    // }
+    cout << myKohan_arr<float>(a,data,c) << endl;
+    
 }
