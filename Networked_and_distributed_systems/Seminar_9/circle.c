@@ -1,25 +1,16 @@
 #include <mpi.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <math.h>
 #include <signal.h>
+#include <stdio.h>
 #include <time.h>
 #include <stdbool.h>
 
+const int RANK = 1;
+const int TIMEOUT = 2;
 
-#define RANK 1
-#define TIMEOUT 2
-
-#define ELECTION_MSG 1
-#define OK_MSG 2
-#define COORDINATOR_MSG 3
-
-
-volatile sig_atomic_t timeout_flag = 1;
-
-void handler(int sig) {
-    timeout_flag = 0;
-}
+volatile sig_atomic_t sigflag = 1;
 
 // Проверка статуса MPI операций
 void CheckState(int status) {
@@ -28,7 +19,13 @@ void CheckState(int status) {
     }
 }
 
-int main(int argc, char** argv) {
+void handler(int sig) {
+    sigflag = 0;
+}
+
+int main(int argc, char* argv[]) {
+    int coordinator = -1;
+
     int rank, size;
     MPI_Status status;
 
@@ -37,7 +34,7 @@ int main(int argc, char** argv) {
     st = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     CheckState(st);
     st = MPI_Comm_size(MPI_COMM_WORLD, &size);
-    CheckState(st);    
+    CheckState(st);      
 
     bool is_alive;
 
@@ -45,222 +42,147 @@ int main(int argc, char** argv) {
     if (rank != RANK) {
         srandom(rank);
         int rand_num = random();
-        is_alive = (rand_num % 2) == 0;
+        is_alive = (rand_num % 2) == 1;
         
         if (!is_alive) {
             printf("Процесс %d: я мертв (случайное число %d)\n", rank, rand_num);
-            MPI_Finalize();
+            CheckState(MPI_Finalize());
             return 0;
+
         }
         printf("Процесс %d: я жив (случайное число: %d)\n", rank, rand_num);
     } else {
         is_alive = true;
         printf("Процесс %d: я жив (являюсь инициализатором)\n", rank);
     }
-   
 
-    // Буфер для сообщений: участники + тип сообщения + отправитель
-    int* msg_buffer = (int*)malloc((size + 2) * sizeof(int));
+    // Буфер для сообщений: участники
+    int* buffer = (int*)malloc((size) * sizeof(int));
 
-    for (int i = 0; i < size + 2; i++) {
-        msg_buffer[i] = 0;
+    for (int i = 0; i < size; i++) {
+        buffer[i] = 0;
     }
-    msg_buffer[size + 1] = rank; // Ранг отправителя
 
-    int next_alive = -1; // Следующий живой процесс
-    int current_candidate = (rank + 1) % size; // Кандидат для проверки
-    int coordinator = -1;
+    if(rank == RANK){
+        // Логика инициализатора выборов:
+        int next_proc = 0;        
 
-    if (rank == RANK) {
-        // Начинаем выборы
-        printf("Процесс %d: начинаю выборы как инициализатор\n", rank);
-        
-        msg_buffer[rank] = 1; // Отмечаем себя как участника
-        msg_buffer[size] = ELECTION_MSG; // Тип сообщения
-        
-        // Поиск следующего живого процесса
-        while (next_alive == -1) {
-            printf("Процесс %d: пытаюсь связаться с процессом %d\n", rank, current_candidate);            
+        buffer[rank] = 1;
+        int msg_check = 0;
+
+        for (next_proc = (rank + 1) % size; next_proc != rank; next_proc = (next_proc + 1) % size) {             
+            printf("Процесс %d: отправил буфер процессу %d\n", rank, next_proc);
             
-            CheckState(MPI_Send(msg_buffer, size + 2, MPI_INT, current_candidate, 0, MPI_COMM_WORLD));                              
-            
-            // Установка таймаута
-            timeout_flag = 1;
-            signal(SIGALRM, handler);
+            signal(SIGALRM, handler);  
+
+            CheckState(MPI_Send(buffer, size, MPI_INT, next_proc, 0, MPI_COMM_WORLD));                                  
+
+            sigflag = 1;
             alarm(TIMEOUT);
-            
-            // Ждем ответ
-            while (timeout_flag) {
-                int has_message;
-                CheckState(MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &has_message, &status));                            
-                
-                if (has_message) {
-                    CheckState(MPI_Recv(msg_buffer, size + 2, MPI_INT,MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status));                             
-                    
-                    if (msg_buffer[size] == OK_MSG) {
-                        next_alive = current_candidate;
-                        printf("Процесс %d: Получил ОК от %d\n", rank, next_alive);
-                        timeout_flag = 0;
-                        alarm(0); // Сбрасываем таймер
-                    }
-                }
-            }
-            
-            // Переход к следующему кандидату
-            current_candidate = (current_candidate + 1) % size;
-            
-            // Проверка на одиночество
-            if (current_candidate == rank) {
-                printf("Процесс %d: Я единственный активный процесс, поэтому становлюсь координатором\n", rank);                
-                
-                // Сообщаем всем процессам, что текущий процесс - координатор
-                msg_buffer[size] = COORDINATOR_MSG;
-                msg_buffer[size + 1] = rank;
-                
-                for (int i = 0; i < size; i++) {
-                    if (i != rank) {
-                        CheckState(MPI_Send(msg_buffer, size + 2, MPI_INT, i, 0, MPI_COMM_WORLD));                                 
-                    }
-                }
-                
-                free(msg_buffer);
-                MPI_Finalize();
-                return 0;
-            }
-        }
-        
-        // Ожидание сообщения о координаторе
-        while (1) {
-            int has_message;
-            CheckState(MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &has_message, &status));                      
-            
-            if (has_message) {
-                CheckState(MPI_Recv(msg_buffer, size + 2, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status));                         
-                
-                if (msg_buffer[size] == COORDINATOR_MSG) {
-                    coordinator = msg_buffer[size + 1];
-                    printf("Процесс %d: Выборы закончились. Координатор - %d\n", rank, coordinator);
-                    MPI_Finalize();
-                    return 0;
-                }
-                break;
-            }
-        }
-    } 
-    else {
-        // Логика участников выборов
-        printf("Процесс %d: Ожидаю сообшщения о выборах\n", rank);
-        
-        // Получение первого сообщения
-        CheckState(MPI_Recv(msg_buffer, size + 2, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status));                     
-        
-        if (msg_buffer[size] == ELECTION_MSG) {
-            printf("Процесс %d: Получил сообщение о выборах от %d\n", rank, msg_buffer[size + 1]);                  
-            
-            // Отправка подтверждения
-            msg_buffer[rank] = 1; // Участвуем в выборах
-            msg_buffer[size] = OK_MSG;
-            CheckState(MPI_Send(msg_buffer, size + 2, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD));                     
-            
-            printf("Процесс %d: Отправил ОК %d\n", rank, status.MPI_SOURCE);
-            
-            // Поиск следующего живого процесса
-            msg_buffer[size] = ELECTION_MSG;
-            current_candidate = (rank + 1) % size;
-            
-            while (next_alive == -1) {
-                printf("Процесс %d: Пытаюсь связаться с процессом %d\n", rank, current_candidate);
-                
-                CheckState(MPI_Send(msg_buffer, size + 2, MPI_INT, current_candidate, 0, MPI_COMM_WORLD));                         
-                
-                // Установка таймаута
-                timeout_flag = 1;
-                signal(SIGALRM, handler);
-                alarm(TIMEOUT);
-                
-                // Ожидание ответа
-                while (timeout_flag) {
-                    int has_message;
-                    CheckState(MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &has_message, &status));                              
-                    
-                    if (has_message) {
-                        CheckState(MPI_Recv(msg_buffer, size + 2, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status));                                 
-                        
-                        if (msg_buffer[size] == OK_MSG) {
-                            next_alive = current_candidate;
-                            printf("Процесс %d: Получил ОК от %d\n", rank, next_alive);
-                            timeout_flag = 0;
-                            alarm(0);
-                        }
-                    }
-                }
-                
-                // Переход к следующему кандидату
-                current_candidate = (current_candidate + 1) % size;
-                
-                // Если прошли полный круг
-                if (current_candidate == rank) {
-                    // Определяем координатора (процесс с максимальным рангом)
-                    for (int i = size - 1; i >= 0; i--) {
-                        if (msg_buffer[i] == 1) {
-                            coordinator = i;
-                            break;
-                        }
-                    }
-                    
-                    printf("Процесс %d: Координатором выбран %d\n", rank, coordinator);
-                    
-                    // Отправка сообщения о координаторе
-                    msg_buffer[size] = COORDINATOR_MSG;
-                    msg_buffer[size + 1] = coordinator;
-                    
-                    // Находим предыдущий процесс в кольце
-                    int prev = (rank == 0) ? size - 1 : rank - 1;
-                    CheckState(MPI_Send(msg_buffer, size + 2, MPI_INT, prev, 0, MPI_COMM_WORLD));                             
-                    
-                    printf("Процесс %d: Отправил сообщение о координаторе процессу %d\n", rank, prev);
+
+            while (sigflag) {
+                CheckState(MPI_Iprobe(next_proc, 1, MPI_COMM_WORLD, &msg_check, &status));                    
+
+                if (msg_check) {
+                    CheckState(MPI_Recv(buffer, size, MPI_INT, next_proc, 1, MPI_COMM_WORLD, &status));                                        
+
+                    printf("Процесс %d: следующий - процесс %d\n", rank, next_proc);
+                    alarm(0);
                     break;
                 }
             }
-        }
-        
-        // Ожидание/передача сообщения о координаторе
-        while (1) {
-            int has_message;
-            CheckState(MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &has_message, &status));                      
+
+            if (!sigflag) {
+                printf("Процесс %d: ничего не получил от процесса %d\n", rank, next_proc);                
+                continue;
+            }
+
+            if (msg_check) break;
             
-            if (has_message) {
-                CheckState(MPI_Recv(msg_buffer, size + 2, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status));                         
-                
-                if (msg_buffer[size] == COORDINATOR_MSG) {
-                    coordinator = msg_buffer[size + 1];
-                    
-                    if (coordinator == rank) {
-                        // Мы уже отправили это сообщение - завершаем работу
-                        printf("Процесс %d: Получил сообщение что я координатор\n", rank);
-                        MPI_Finalize();
-                        return 0;
-                        break;
-                    } else {
-                        printf("Процесс %d: Получил сообщение об избрании координатора. Координатор - процесс %d\n",  rank, coordinator);                             
-                        
-                        // Пересылаем сообщение следующему процессу
-                        int next = (rank + 1) % size;
-                        if (next != RANK) { // Не отправляем инициатору, если он уже получил
-                            CheckState(MPI_Send(msg_buffer, size + 2, MPI_INT, 
-                                         next, 0, MPI_COMM_WORLD));
-                            printf("Процесс %d: Отправил сообщение об избрании координатора процессу %d\n", rank, next);
-                            MPI_Finalize();
-                            return 0;                                  
-                        }
-                        break;
-                    }
+        }
+
+        if (next_proc == rank) {
+            printf("Процесс %d: я единственный процесс\n", rank);
+      
+            free(buffer);
+            MPI_Finalize();
+            return 0;
+        }
+
+        printf("Процесс %d: ожидаю сообщение \n", rank);
+        CheckState(MPI_Recv(buffer, size, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status));                           
+
+        printf("Процесс %d: кольцо замкнуто \n", rank);
+        CheckState(MPI_Send(buffer, size, MPI_INT, status.MPI_SOURCE, 1, MPI_COMM_WORLD));
+
+        if (buffer[rank] == 1) {
+            for (int i = size - 1; i >= 0; i--)
+                if (buffer[i] == 1) {
+                    coordinator = i;
+                    break;
+                }
+      
+            printf("Процесс %d: текущий лидер - процесс %d\n", rank, coordinator);
+            CheckState(MPI_Send(&coordinator, 1, MPI_INT, next_proc, 2, MPI_COMM_WORLD));                
+        }
+
+        CheckState(MPI_Recv(&coordinator, 1, MPI_INT, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &status));            
+
+        printf("Процесс %d: текущий лидер - процесс %d\n", rank, coordinator);
+                           
+    } else {
+        // Логика остальных процессов:       
+        
+        int msg_check = 0;
+        
+        CheckState(MPI_Recv(buffer, size, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status));                          
+
+        printf("Процесс %d: получил буфер от %d\n", rank, status.MPI_SOURCE);
+
+        buffer[rank] = 1;
+          
+        printf("Процесс %d: ответил процессу %d\n", rank, status.MPI_SOURCE);
+        
+        CheckState(MPI_Send(buffer, size, MPI_INT, status.MPI_SOURCE, 1, MPI_COMM_WORLD));
+
+        int next_proc = 0;
+        for (next_proc = (rank + 1) % size; next_proc != rank; next_proc = (next_proc + 1) % size) {
+
+            printf("Процесс %d: отправил сообщение о голосовании процессу %d\n", rank, next_proc);
+
+            signal(SIGALRM, handler); 
+
+            CheckState(MPI_Send(buffer, size, MPI_INT, next_proc, 0, MPI_COMM_WORLD));                             
+
+            sigflag = 1;
+            alarm(TIMEOUT);
+
+            while (sigflag) {
+                CheckState(MPI_Iprobe(next_proc, 1, MPI_COMM_WORLD, &msg_check, &status));            
+
+                if (msg_check) {
+                    CheckState(MPI_Recv(buffer, size, MPI_INT, next_proc, 1, MPI_COMM_WORLD, &status));                                 
+
+                    printf("Процесс %d: следующий - процесс %d \n", rank, next_proc);
+                    alarm(0);
+                    break;
                 }
             }
-        }
-    }
 
-    free(msg_buffer);
-    MPI_Finalize();
+            if (msg_check) break;
+        }
+
+        CheckState(MPI_Recv(&coordinator, 1, MPI_INT, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &status));            
+
+        CheckState(MPI_Send(&coordinator, 1, MPI_INT, next_proc, 2, MPI_COMM_WORLD));
+
+        printf("Процесс %d: текущий лидер - процесс %d\n", rank, coordinator);
+                           
+    } 
+    
+    free(buffer);
+    CheckState(MPI_Finalize());
     return 0;
+
 }
+
