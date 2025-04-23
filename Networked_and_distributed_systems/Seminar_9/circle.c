@@ -10,7 +10,7 @@
 const int RANK = 1;
 const int TIMEOUT = 2;
 
-volatile sig_atomic_t sigflag = 1;
+int sigflag = 1;
 
 // Проверка статуса MPI операций
 void CheckState(int status) {
@@ -126,9 +126,9 @@ int main(int argc, char* argv[]) {
             CheckState(MPI_Send(&coordinator, 1, MPI_INT, next_proc, 2, MPI_COMM_WORLD));                
         }
 
-        CheckState(MPI_Recv(&coordinator, 1, MPI_INT, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &status));            
+        CheckState(MPI_Recv(&coordinator, 1, MPI_INT, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &status));          
 
-        printf("Процесс %d: текущий лидер - процесс %d\n", rank, coordinator);
+        
                            
     } else {
         // Логика остальных процессов:       
