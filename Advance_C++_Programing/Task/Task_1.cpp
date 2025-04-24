@@ -5,6 +5,7 @@
 #include <stdexcept> 
 using namespace std; 
 
+// Функция для красивого вывода списка
 template <typename T>
 void printVec(const std::vector<T> vec){
     for (int i = 0; i < vec.size(); i++)
@@ -14,36 +15,33 @@ void printVec(const std::vector<T> vec){
     std::cout << std::endl;    
 };
 
+// Базовый класс, от которого наследуем User и Group
 class Entity {
 protected:
     std::string name;     
     int id = 0;
-    inline static std::vector<int> idLists;
-    inline static std::vector<std::string> namesLists;
+    inline static std::vector<int> idLists; // список id групп и участников
+    inline static std::vector<std::string> namesLists; // список имен групп и участников
 
-    void checkAndAddID(int value, std::vector<int>& list) {
-        if (std::find(list.begin(), list.end(), value) != list.end()) { 
+    // Проверка и добаление id 
+    void checkAndAddID(int new_id, std::vector<int>& list) {
+        if (std::find(list.begin(), list.end(), new_id) != list.end()) { 
             throw std::runtime_error("Вы попытались присвоить ID, которое уже занято!"); 
         }
-        list.push_back(value);
+        list.push_back(new_id);
     }
 
-    void checkAndAddName(const std::string& value, std::vector<std::string>& list) { 
-        if (std::find(list.begin(), list.end(), value) != list.end()) { 
+    // Проверка и добавление имени
+    void checkAndAddName(const std::string& new_name, std::vector<std::string>& list) { 
+        if (std::find(list.begin(), list.end(), new_name) != list.end()) { 
             throw std::runtime_error("Вы попытались присвоить имя, которое уже занято!"); 
         }
-        list.push_back(value);
+        list.push_back(new_name);
     }
 
 public:
-    std::vector<std::string>& getAllNames(){
-        return namesLists;
-    }
-
-    std::vector<int>& getAllID(){
-        return idLists;
-    }
-
+    
+    // Конструктор по умолчанию
     Entity() : name(""), id(0){
         
         for (int i = 0; i < idLists.size() + 1; i++)
@@ -59,6 +57,7 @@ public:
         
     }
 
+    // Конструктор без id
     Entity(const std::string& initialName) : name(initialName), id(0){
         
         for (int i = 0; i < idLists.size() + 1; i++)
@@ -74,11 +73,14 @@ public:
         
     }
 
+    // Основной конструктор 
     Entity(const std::string& initialName, int identifier) : name(initialName), id(identifier) {
         checkAndAddID(id, idLists);
         checkAndAddName(name, namesLists);
     }
 
+    // Сеттеры:
+    // Задаем новое имя
     void setName(const std::string& newName) {
         if (newName == name) return;
         
@@ -91,6 +93,7 @@ public:
         name = newName;
     }
     
+    // Задаем новое id
     void setID(int newID) {
         if (newID == id) return;
         
@@ -103,8 +106,18 @@ public:
         id = newID;
     }
 
+    // Геттеры:
+
     std::string getName() const { return name; }
     int getID() const { return id; }
+
+    std::vector<std::string>& getAllNames(){
+        return namesLists;
+    }
+
+    std::vector<int>& getAllID(){
+        return idLists;
+    }
 
     virtual ~Entity() {
         auto target_id = std::find(idLists.begin(), idLists.end(), id);
