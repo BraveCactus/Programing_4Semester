@@ -36,15 +36,43 @@ protected:
     }
 
 public:
-    std::vector<std::string> getAllNames(){
+    std::vector<std::string>& getAllNames(){
         return namesLists;
     }
 
-    std::vector<int> getAllID(){
+    std::vector<int>& getAllID(){
         return idLists;
     }
 
-    Entity() : name(""), id(0) {}
+    Entity() : name(""), id(0){
+        
+        for (int i = 0; i < idLists.size() + 1; i++)
+        {
+            if (find(idLists.begin(), idLists.end(), i) == idLists.end())
+            {
+                id = i;
+                break;
+            }            
+        }
+        checkAndAddID(id, idLists);      
+        checkAndAddName(name, namesLists); 
+        
+    }
+
+    Entity(const std::string& initialName) : name(initialName), id(0){
+        
+        for (int i = 0; i < idLists.size() + 1; i++)
+        {
+            if (find(idLists.begin(), idLists.end(), i) == idLists.end())
+            {
+                id = i;
+                break;
+            }            
+        }      
+        checkAndAddID(id, idLists);      
+        checkAndAddName(name, namesLists);     
+        
+    }
 
     Entity(const std::string& initialName, int identifier) : name(initialName), id(identifier) {
         checkAndAddID(id, idLists);
@@ -93,7 +121,8 @@ public:
 
 class User : public Entity {     
 public:
-    User() : Entity() {}
+    User(): Entity() {}
+    User(const std::string& userName) : Entity(userName){};
     User(const std::string& userName, int userID) : Entity(userName, userID) {}
 };
 
@@ -101,6 +130,7 @@ class Group : public Entity {
     std::vector<User*> usersList;
 public:
     Group() : Entity() {}
+    Group(const std::string& groupName) : Entity(groupName){}
     Group(const std::string& groupName, int groupID) : Entity(groupName, groupID) {}
 
     ~Group() override {
@@ -122,10 +152,23 @@ int main() {
     std::string name3 = "Miha";
     User u3(name3, 3);  
 
-    std::vector<std::string> allNames = u1.getAllNames(); 
+    std::vector<std::string>& allNames = u1.getAllNames(); 
+    std::vector<int>& allID = u1.getAllID(); 
     
     printVec(allNames);   
+    printVec(allID);
 
+    std::string name4 = "Tipok1";
+    User u4(name4); 
+
+    printVec(allNames);   
+    printVec(allID);
+
+    std::string name5 = "Tipok2";
+    User u5(name5); 
+
+    printVec(allNames);   
+    printVec(allID);
     
     return 0;
 }
