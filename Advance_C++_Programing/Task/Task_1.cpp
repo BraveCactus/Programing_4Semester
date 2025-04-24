@@ -2,7 +2,17 @@
 #include <string>
 #include <vector>
 #include <algorithm>  
-#include <stdexcept>  
+#include <stdexcept> 
+using namespace std; 
+
+template <typename T>
+void printVec(const std::vector<T> vec){
+    for (int i = 0; i < vec.size(); i++)
+    {
+        std::cout << vec[i] << " ";
+    }
+    std::cout << std::endl;    
+};
 
 class Entity {
 protected:
@@ -13,19 +23,27 @@ protected:
 
     void checkAndAddID(int value, std::vector<int>& list) {
         if (std::find(list.begin(), list.end(), value) != list.end()) { 
-            throw std::runtime_error("это ID уже занято!"); 
+            throw std::runtime_error("Вы попытались присвоить ID, которое уже занято!"); 
         }
         list.push_back(value);
     }
 
     void checkAndAddName(const std::string& value, std::vector<std::string>& list) { 
         if (std::find(list.begin(), list.end(), value) != list.end()) { 
-            throw std::runtime_error("это имя занято!"); 
+            throw std::runtime_error("Вы попытались присвоить имя, которое уже занято!"); 
         }
         list.push_back(value);
     }
 
 public:
+    std::vector<std::string> getAllNames(){
+        return namesLists;
+    }
+
+    std::vector<int> getAllID(){
+        return idLists;
+    }
+
     Entity() : name(""), id(0) {}
 
     Entity(const std::string& initialName, int identifier) : name(initialName), id(identifier) {
@@ -97,6 +115,17 @@ public:
 int main() {
     std::string name1 = "Serega";
     User u1(name1, 1); 
+
+    std::string name2 = "Griga";
+    User u2(name2, 2); 
+
+    std::string name3 = "Miha";
+    User u3(name3, 3);  
+
+    std::vector<std::string> allNames = u1.getAllNames(); 
+    
+    printVec(allNames);   
+
     
     return 0;
 }
