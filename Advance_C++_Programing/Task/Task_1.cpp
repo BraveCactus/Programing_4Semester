@@ -5,12 +5,14 @@
 #include <stdexcept> 
 #include <memory>
 #include <map>
+#include <sstream>
 using namespace std; 
 
 //To do:
 // 1) Подумать над использованием ссылок или указетелей в idLists и namesLists
 // 2) Не нравится что у User можно поменять ссылку на группу непосредственно через экземпляр этого класса done
-// 3) Добавить доп инфу для классов
+// 3) Добавить доп инфу для классов done
+// 4) Проблемы с занесением доп информации
 
 // Базовый класс, от которого наследуем User и Group
 class Entity {
@@ -429,27 +431,181 @@ public:
     }
 };
 
+void printHelp() {
+    cout << "Доступные команды:" << endl;
+    cout << "  createUser <userId> <username> [доп.инфо] - Создать нового пользователя" << endl;
+    cout << "  deleteUser <userId> - Удалить пользователя" << endl;
+    cout << "  allUsers - Показать всех пользователей" << endl;
+    cout << "  getUser <userId> - Показать информацию о пользователе" << endl;
+    cout << "  createGroup <groupId> <groupName> [доп.инфо] - Создать новую группу" << endl;
+    cout << "  deleteGroup <groupId> - Удалить группу" << endl;
+    cout << "  allGroups - Показать все группы" << endl;
+    cout << "  getGroup <groupId> - Показать информацию о группе" << endl;
+    cout << "  addUserToGroup <userId> <groupId> - Добавить пользователя в группу" << endl;
+    cout << "  removeUserFromGroup <userId> <groupId> - Удалить пользователя из группы" << endl;
+    cout << "  setUserInfo <userId> <инфо> - Установить доп. информацию для пользователя" << endl;
+    cout << "  setGroupInfo <groupId> <инфо> - Установить доп. информацию для группы" << endl;
+    cout << "  help - Показать эту справку" << endl;
+    cout << "  exit - Выйти из программы" << endl;
+}
+
+void processCommand(const string& command, UserGroupManager& manager) {
+    istringstream iss(command);
+    string cmd;
+    iss >> cmd;
+
+    if (cmd == "createUser") {
+        int userId;
+        string username, info = "_";
+        if (iss >> userId >> username) {
+            getline(iss, info); // Читаем оставшуюся часть строки как доп. информацию
+            if (!info.empty() && info[0] == ' ') {
+                info = info.substr(1); // Удаляем первый пробел
+            }
+            manager.createUser(userId, username, info);
+        } else {
+            cout << "Ошибка: Неверные аргументы для createUser. Использование: createUser <userId> <username> [доп.инфо]" << endl;
+        }
+    }
+    else if (cmd == "deleteUser") {
+        int userId;
+        if (iss >> userId) {
+            manager.deleteUser(userId);
+        } else {
+            cout << "Ошибка: Неверные аргументы для deleteUser. Использование: deleteUser <userId>" << endl;
+        }
+    }
+    else if (cmd == "allUsers") {
+        manager.allUsers();
+    }
+    else if (cmd == "getUser") {
+        int userId;
+        if (iss >> userId) {
+            manager.getUser(userId);
+        } else {
+            cout << "Ошибка: Неверные аргументы для getUser. Использование: getUser <userId>" << endl;
+        }
+    }
+    else if (cmd == "createGroup") {
+        int groupId;
+        string groupName, info = "_";
+        if (iss >> groupId >> groupName) {
+            getline(iss, info);
+            if (!info.empty() && info[0] == ' ') {
+                info = info.substr(1);
+            }
+            manager.createGroup(groupId, groupName, info);
+        } else {
+            cout << "Ошибка: Неверные аргументы для createGroup. Использование: createGroup <groupId> <groupName> [доп.инфо]" << endl;
+        }
+    }
+    else if (cmd == "deleteGroup") {
+        int groupId;
+        if (iss >> groupId) {
+            manager.deleteGroup(groupId);
+        } else {
+            cout << "Ошибка: Неверные аргументы для deleteGroup. Использование: deleteGroup <groupId>" << endl;
+        }
+    }
+    else if (cmd == "allGroups") {
+        manager.allGroups();
+    }
+    else if (cmd == "getGroup") {
+        int groupId;
+        if (iss >> groupId) {
+            manager.getGroup(groupId);
+        } else {
+            cout << "Ошибка: Неверные аргументы для getGroup. Использование: getGroup <groupId>" << endl;
+        }
+    }
+    else if (cmd == "addUserToGroup") {
+        int userId, groupId;
+        if (iss >> userId >> groupId) {
+            manager.addUserToGroup(userId, groupId);
+        } else {
+            cout << "Ошибка: Неверные аргументы для addUserToGroup. Использование: addUserToGroup <userId> <groupId>" << endl;
+        }
+    }
+    else if (cmd == "removeUserFromGroup") {
+        int userId, groupId;
+        if (iss >> userId >> groupId) {
+            manager.removeUserFromGroup(userId, groupId);
+        } else {
+            cout << "Ошибка: Неверные аргументы для removeUserFromGroup. Использование: removeUserFromGroup <userId> <groupId>" << endl;
+        }
+    }
+    else if (cmd == "setUserInfo") {
+        int userId;
+        string info;
+        if (iss >> userId) {
+            getline(iss, info);
+            if (!info.empty() && info[0] == ' ') {
+                info = info.substr(1);
+            }
+            manager.setUserInfo(userId, info);
+        } else {
+            cout << "Ошибка: Неверные аргументы для setUserInfo. Использование: setUserInfo <userId> <инфо>" << endl;
+        }
+    }
+    else if (cmd == "setGroupInfo") {
+        int groupId;
+        string info;
+        if (iss >> groupId) {
+            getline(iss, info);
+            if (!info.empty() && info[0] == ' ') {
+                info = info.substr(1);
+            }
+            manager.setGroupInfo(groupId, info);
+        } else {
+            cout << "Ошибка: Неверные аргументы для setGroupInfo. Использование: setGroupInfo <groupId> <инфо>" << endl;
+        }
+    }
+    else if (cmd == "help") {
+        printHelp();
+    }
+    else if (cmd == "exit") {
+        exit(0);
+    }
+    else {
+        cout << "Ошибка: Неизвестная команда. Введите 'help' для списка команд." << endl;
+    }
+}
+
 int main() {
+    // UserGroupManager manager;
+    
+    // manager.createUser(1, "Dimon", "Любит программирование");
+    // manager.createUser(2, "Ilyha", "Отличник");
+    // manager.createUser(3, "Nekit-Pityx", "Весельчак");
+    
+    // manager.createGroup(4, "KGKP", "Группа программистов");
+    
+    // manager.addUserToGroup(1, 4);
+    // manager.addUserToGroup(2, 4);
+    // manager.addUserToGroup(3, 4);
+    
+    // manager.allUsers();
+    // manager.allGroups();
+    
+    // manager.setUserInfo(2, "Очень умный");
+    // manager.setGroupInfo(4, "Лучшая группа");
+    
+    // manager.getUser(2);
+    // manager.getGroup(4);
+
     UserGroupManager manager;
-    
-    manager.createUser(1, "Dimon", "Любит программирование");
-    manager.createUser(2, "Ilyha", "Отличник");
-    manager.createUser(3, "Nekit-Pityx", "Весельчак");
-    
-    manager.createGroup(4, "KGKP", "Группа программистов");
-    
-    manager.addUserToGroup(1, 4);
-    manager.addUserToGroup(2, 4);
-    manager.addUserToGroup(3, 4);
-    
-    manager.allUsers();
-    manager.allGroups();
-    
-    manager.setUserInfo(2, "Очень умный");
-    manager.setGroupInfo(4, "Лучшая группа");
-    
-    manager.getUser(2);
-    manager.getGroup(4);
+    string command;
+
+    cout << "Система управления пользователями и группами" << endl;
+    cout << "Введите 'help' для списка команд" << endl;
+
+    while (true) {
+        cout << "> ";
+        getline(cin, command);
+        if (!command.empty()) {
+            processCommand(command, manager);
+        }
+    }
 
     return 0;
 }
