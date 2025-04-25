@@ -3,6 +3,7 @@
 #include <vector>
 #include <algorithm>  
 #include <stdexcept> 
+#include <memory>
 using namespace std; 
 
 //To do:
@@ -115,11 +116,11 @@ public:
     std::string getName() const { return name; }
     int getID() const { return id; }
 
-    std::vector<std::string>& getAllNames() const{
+    const std::vector<std::string>& getAllNames() const{
         return namesLists;
     }
 
-    std::vector<int>& getAllID() const {
+    const std::vector<int>& getAllID() const {
         return idLists;
     }
 
@@ -136,39 +137,32 @@ public:
     }
 };
 
+class Group; // Чтобы не было циклических зависимостей
+
 class User : public Entity {   
-private:
-    // std::string* groupLink = nullptr;  
-    std::shared_ptr<std::string> groupLink; // Выгоднее так как происходит автоматическое освобождение памяти
+private:     
+    std::weak_ptr<Group> groupLink; // Выгоднее так как происходит автоматическое освобождение памяти + нет зацикленности
+
+    // Функция для задания ссылки группы, в которой состоит пользователь
+    friend class Group;
+    void setGroup(std::shared_ptr<Group> group){
+        groupLink = group;
+    }
 
 public:
     User(): Entity() {}
     User(const std::string& userName) : Entity(userName){};
-    User(const std::string& userName, int userID) : Entity(userName, userID) {}
-
-    // Функция для задания ссылки группы, в которой состоит пользователь
-    void setGroupLink(const std::string& link){
-        groupLink = std::make_shared<std::string>(link);
-    }
+    User(const std::string& userName, int userID) : Entity(userName, userID) {}    
 
     // Функция для получения ссылки на группу, к которой принадлежит пользователь
-    const std::string& getGroupLink() const {
-        if (!groupLink) {
-            throw std::runtime_error("Пользователь не принадлежит ни одной группе!");
-        }
-        return *groupLink;
-    }
-    // const std::string& getGroupLink() const {
-    //     if(!groupLink){throw std::runtime_error("Данный пользователь не принадлежит ни одной группе!");}
-    //     return *groupLink;
-    // }
-
-
-
+    const std::shared_ptr<Group> getGroupLink() const{
+        return groupLink.lock();
+    }   
+    
 };
 
-class Group : public Entity {
-    std::vector<User*> usersList;
+class Group : public Entity, public enable_shared_from_this<Group> {
+    std::vector<std::shared_ptr<User>> usersList;
 public:
     Group() : Entity() {}
     Group(const std::string& groupName) : Entity(groupName){}
@@ -178,37 +172,41 @@ public:
         usersList.clear();
     }
 
-    // Добавляем пользователя в группу
-    void addUser(User* user) {
+    // Добавление пользователя в группу
+    void addUser(std::shared_ptr<User> user) {
         if (!user) {
             throw std::runtime_error("Попытка добавить nullptr!");
         }
         
-        // Проверяем, что пользователя нет в этой группе
+        // Проверка, что пользователя нет в группе
         auto it = std::find_if(usersList.begin(), usersList.end(),
-            [user](User* u) { return u->getID() == user->getID(); });
+            [user](const auto& u) { return u->getID() == user->getID(); });
             
         if (it != usersList.end()) {
             throw std::runtime_error("Пользователь уже в группе!");
         }
     
         usersList.push_back(user);
-        user->setGroupLink(this->getName());
+        user->setGroup(shared_from_this()); // Устанавливаем ссылку на группу
     }
-    // void addUser(User* user) {        
-    //     auto target_name = std::find(namesLists.begin(), namesLists.end(), user->getName());
 
-    //     if(target_name == namesLists.end()){ throw std::runtime_error("Вы пытаетесь добавить несуществующего Userа!");}
-    //     usersList.push_back(user);
+    // Удаление пользователя из группы
+    void removeUser(std::shared_ptr<User> user) {
+        // Проверка на наличие пользователя в группе
+        auto it = std::find_if(usersList.begin(), usersList.end(),
+            [user](const auto& u) { return u->getID() == user->getID(); });
+            
+        if (it == usersList.end()) {
+            throw std::runtime_error("Пользователь не найден в группе!");
+        }
+        
+        (*it)->setGroup(nullptr); // Удаляем ссылку на группу
+        usersList.erase(it);
+    }
 
-    //     user->setGroupLink(this->name);
-    // }
-
-    // Удаляем пользователя из группы
-    void deleteUser(User* user) {
-        auto target_user = std::find(usersList.begin(), usersList.end(), user);
-        if(target_user == usersList.end()){ throw std::runtime_error("Вы пытаетесь удалить несуществующего участника группы!");}
-        usersList.erase(target_user);
+    // Получение списка пользователей
+    const std::vector<std::shared_ptr<User>>& getUsers() const {
+        return usersList;
     }
 };
 
@@ -222,8 +220,8 @@ int main() {
     std::string name3 = "Miha";
     User u3(name3, 3);  
 
-    std::vector<std::string>& allNames = u1.getAllNames(); 
-    std::vector<int>& allID = u1.getAllID(); 
+    const std::vector<std::string>& allNames = u1.getAllNames(); 
+    const std::vector<int>& allID = u1.getAllID(); 
     
     printVec(allNames);   
     printVec(allID);
