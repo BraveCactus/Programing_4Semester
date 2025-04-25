@@ -55,6 +55,7 @@ public:
         checkAndAddID(id, idLists);      
         checkAndAddName(name, namesLists); 
         
+        
     }
 
     // Конструктор без id
@@ -457,11 +458,11 @@ void processCommand(const string& command, UserGroupManager& manager) {
     if (cmd == "createUser") {
         int userId;
         string username, info = "_";
-        if (iss >> userId >> username) {
-            getline(iss, info); // Читаем оставшуюся часть строки как доп. информацию
-            if (!info.empty() && info[0] == ' ') {
-                info = info.substr(1); // Удаляем первый пробел
-            }
+        if (iss >> userId >> username >> info) {
+            // getline(iss, info); // Читаем оставшуюся часть строки как доп. информацию
+            // if (!info.empty() && info[0] == ' ') {
+            //     info = info.substr(1); // Удаляем первый пробел
+            // }
             manager.createUser(userId, username, info);
         } else {
             cout << "Ошибка: Неверные аргументы для createUser. Использование: createUser <userId> <username> [доп.инфо]" << endl;
@@ -489,11 +490,11 @@ void processCommand(const string& command, UserGroupManager& manager) {
     else if (cmd == "createGroup") {
         int groupId;
         string groupName, info = "_";
-        if (iss >> groupId >> groupName) {
-            getline(iss, info);
-            if (!info.empty() && info[0] == ' ') {
-                info = info.substr(1);
-            }
+        if (iss >> groupId >> groupName >> info) {
+            // getline(iss, info);
+            // if (!info.empty() && info[0] == ' ') {
+            //     info = info.substr(1);
+            // }
             manager.createGroup(groupId, groupName, info);
         } else {
             cout << "Ошибка: Неверные аргументы для createGroup. Использование: createGroup <groupId> <groupName> [доп.инфо]" << endl;
@@ -571,27 +572,7 @@ void processCommand(const string& command, UserGroupManager& manager) {
     }
 }
 
-int main() {
-    // UserGroupManager manager;
-    
-    // manager.createUser(1, "Dimon", "Любит программирование");
-    // manager.createUser(2, "Ilyha", "Отличник");
-    // manager.createUser(3, "Nekit-Pityx", "Весельчак");
-    
-    // manager.createGroup(4, "KGKP", "Группа программистов");
-    
-    // manager.addUserToGroup(1, 4);
-    // manager.addUserToGroup(2, 4);
-    // manager.addUserToGroup(3, 4);
-    
-    // manager.allUsers();
-    // manager.allGroups();
-    
-    // manager.setUserInfo(2, "Очень умный");
-    // manager.setGroupInfo(4, "Лучшая группа");
-    
-    // manager.getUser(2);
-    // manager.getGroup(4);
+int main() {    
 
     UserGroupManager manager;
     string command;
@@ -599,7 +580,7 @@ int main() {
     cout << "Система управления пользователями и группами" << endl;
     cout << "Введите 'help' для списка команд" << endl;
 
-    while (true) {
+    while (true) { 
         cout << "> ";
         getline(cin, command);
         if (!command.empty()) {
