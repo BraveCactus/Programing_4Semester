@@ -135,6 +135,8 @@ public:
             namesLists.erase(target_name);
         }
     }
+
+    
 };
 
 class Group; // Чтобы не было циклических зависимостей
@@ -157,8 +159,9 @@ public:
     // Функция для получения ссылки на группу, к которой принадлежит пользователь
     const std::shared_ptr<Group> getGroupLink() const{
         return groupLink.lock();
-    }   
+    }      
     
+    void printInfo(); // Определим после Group, т.к. User еще не знает о group->getName
 };
 
 class Group : public Entity, public enable_shared_from_this<Group> {
@@ -208,7 +211,33 @@ public:
     const std::vector<std::shared_ptr<User>>& getUsers() const {
         return usersList;
     }
+
+    void printInfo(){
+        std::cout << "Name: " << name << " ID: " << id << std::endl;
+        std::cout << "List of members: ";
+        if (usersList.empty()) {
+            std::cout << "(no members)" << std::endl;
+            return;
+        }
+        for (const auto& user : usersList) {
+            std::cout << user->getName() << " (ID: " << user->getID() << "), ";
+        }
+        std::cout << std::endl;
+    }
+        
 };
+
+// Теперь определяем User::printInfo(), так как Group уже полностью определён
+void User::printInfo() {
+    std::cout << "Name: " << name << " ID: " << id << std::endl;
+    if (auto group = groupLink.lock()) {
+        std::cout << "Group's name: " << group->getName() 
+                  << " Group's address: " << group.get() << std::endl;
+    } else {
+        std::cout << "Group: nullptr" << std::endl;
+    }
+}
+
 
 int main() {
     std::string name1 = "Serega";
