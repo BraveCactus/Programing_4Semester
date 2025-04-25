@@ -42,20 +42,31 @@ int main(int argc, char *argv[])
         if (k == 0) {
             // Внутреннее событие
             lampTime++;
-            printf("Процесс %d:\n", rank);
-            printf("\t Тип события: внутренней событие\n");
-            printf("\t Время Лэмпорта: %d\n", lampTime);
+            printf(
+                "Процесс %d:\n"
+                "\tТип события: внутреннее событие\n"
+                "\tВремя Лэмпорта: %d\n",
+                rank, lampTime
+            );
         }
         else if (k < 0) {
             // Принимаем сообщение от процесса source = -(k+1)
             int source = -(k + 1);            
             int timeToRecv;
-            CheckState(MPI_Recv(&timeToRecv, 1, MPI_INT, source, MPI_ANY_TAG, MPI_COMM_WORLD, &status));            
-            lampTime = (timeToRecv > lampTime ? timeToRecv : lampTime) + 1;           
+            CheckState(MPI_Recv(&timeToRecv, 1, MPI_INT, source, MPI_ANY_TAG, MPI_COMM_WORLD, &status));           
 
-            printf("Процесс %d:\n", rank);
-            printf("\t Тип события: Внешнее сообщение от процесса %d\n", source);
-            printf("\t Время Лэмпорта: %d (принятое время = %d)\n", lampTime, timeToRecv);
+            if (timeToRecv > lampTime) {
+                lampTime = timeToRecv + 1;
+            } else {
+                lampTime = lampTime + 1;
+            }         
+
+            printf(
+                "Процесс %d:\n"
+                "\tТип события: Внешнее сообщение от процесса %d\n"
+                "\tВремя Лэмпорта: %d (принятое время = %d)\n",
+                rank, source, lampTime, timeToRecv
+            );
         }
         else {          
             // Отправляем сообшение процессу target = k-1            
@@ -63,9 +74,12 @@ int main(int argc, char *argv[])
             int target = k-1;
             CheckState(MPI_Send(&lampTime, 1, MPI_INT, target, 0, MPI_COMM_WORLD));                       
 
-            printf("Процесс %d:\n", rank);
-            printf("\t Тип события: Отправил сообщение процессу %d\n", target);
-            printf("\t Время Лэмпорта: %d\n", lampTime);
+            printf(
+                "Процесс %d:\n"
+                "\tТип события: Отправил сообщение процессу %d\n"
+                "\tВремя Лэмпорта: %d\n",
+                rank, target, lampTime
+            );
         }
     }
 
