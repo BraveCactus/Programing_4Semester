@@ -8,17 +8,7 @@ using namespace std;
 
 //To do:
 // 1) Подумать над использованием ссылок или указетелей в idLists и namesLists
-// 2) Не нравится что у User можно поменять ссылку на группу непосредственно через экземпляр этого класса
-
-// Функция для красивого вывода списка
-template <typename T>
-void printVec(const std::vector<T> vec){
-    for (int i = 0; i < vec.size(); i++)
-    {
-        std::cout << vec[i] << " ";
-    }
-    std::cout << std::endl;    
-};
+// 2) Не нравится что у User можно поменять ссылку на группу непосредственно через экземпляр этого класса done
 
 // Базовый класс, от которого наследуем User и Group
 class Entity {
@@ -157,7 +147,7 @@ public:
     User(const std::string& userName, int userID) : Entity(userName, userID) {}    
 
     // Функция для получения ссылки на группу, к которой принадлежит пользователь
-    const std::shared_ptr<Group> getGroupLink() const{
+    const std::shared_ptr<Group> getGroupLink() const{               
         return groupLink.lock();
     }      
     
@@ -213,10 +203,10 @@ public:
     }
 
     void printInfo(){
-        std::cout << "Name: " << name << " ID: " << id << std::endl;
-        std::cout << "List of members: ";
+        std::cout << "Имя: " << name << " ID: " << id << std::endl;
+        std::cout << "Список участников: ";
         if (usersList.empty()) {
-            std::cout << "(no members)" << std::endl;
+            std::cout << "(нет участников)" << std::endl;
             return;
         }
         for (const auto& user : usersList) {
@@ -229,43 +219,36 @@ public:
 
 // Теперь определяем User::printInfo(), так как Group уже полностью определён
 void User::printInfo() {
-    std::cout << "Name: " << name << " ID: " << id << std::endl;
+    std::cout << "Имя: " << name << " ID: " << id << std::endl;
     if (auto group = groupLink.lock()) {
-        std::cout << "Group's name: " << group->getName() 
-                  << " Group's address: " << group.get() << std::endl;
+        std::cout << "Имя группы: " << group->getName() 
+                  << "Адрес группы: " << group.get() << std::endl;
     } else {
-        std::cout << "Group: nullptr" << std::endl;
+        std::cout << "Группа: nullptr" << std::endl;
     }
 }
 
 
 int main() {
-    std::string name1 = "Serega";
-    User u1(name1, 1); 
 
-    std::string name2 = "Griga";
-    User u2(name2, 2); 
+    auto u5 = std::make_shared<User>("Dimon");
+    u5->printInfo();
+    auto u6 = std::make_shared<User>("Ilyha");
+    u6->printInfo();
+    auto u7 = std::make_shared<User>("Nekit-Pityx");
+    u7->printInfo();
 
-    std::string name3 = "Miha";
-    User u3(name3, 3);  
+    auto g1 = std::make_shared<Group>("KGKP");
+    g1->printInfo();
 
-    const std::vector<std::string>& allNames = u1.getAllNames(); 
-    const std::vector<int>& allID = u1.getAllID(); 
+    g1->addUser(u5);    
+
+    g1->addUser(u6);    
+
+    g1->addUser(u7);
     
-    printVec(allNames);   
-    printVec(allID);
+    g1->printInfo();
 
-    std::string name4 = "Tipok1";
-    User u4(name4); 
-
-    printVec(allNames);   
-    printVec(allID);
-
-    std::string name5 = "Tipok2";
-    User u5(name5); 
-
-    printVec(allNames);   
-    printVec(allID);
-    
+   
     return 0;
 }
