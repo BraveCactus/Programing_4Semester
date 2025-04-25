@@ -4,17 +4,20 @@
 #include <algorithm>  
 #include <stdexcept> 
 #include <memory>
+#include <map>
 using namespace std; 
 
 //To do:
 // 1) Подумать над использованием ссылок или указетелей в idLists и namesLists
 // 2) Не нравится что у User можно поменять ссылку на группу непосредственно через экземпляр этого класса done
+// 3) Добавить доп инфу для классов
 
 // Базовый класс, от которого наследуем User и Group
 class Entity {
 protected:
     std::string name;     
     int id = 0;
+    std::string addInfo;
     inline static std::vector<int> idLists; // список id групп и участников
     inline static std::vector<std::string> namesLists; // список имен групп и участников
 
@@ -37,7 +40,7 @@ protected:
 public:
     
     // Конструктор по умолчанию
-    Entity() : name("_"), id(0){
+    Entity() : name("_"), id(0), addInfo("_"){
         
         for (int i = 0; i < idLists.size() + 1; i++)
         {
@@ -53,7 +56,7 @@ public:
     }
 
     // Конструктор без id
-    Entity(const std::string& initialName) : name(initialName), id(0){
+    Entity(const std::string& initialName) : name(initialName), id(0), addInfo("_"){
         
         for (int i = 0; i < idLists.size() + 1; i++)
         {
@@ -69,7 +72,7 @@ public:
     }
 
     // Основной конструктор 
-    Entity(const std::string& initialName, int identifier) : name(initialName), id(identifier) {
+    Entity(const std::string& initialName, int identifier, const std::string& info = "_") : name(initialName), id(identifier), addInfo(info) {
         checkAndAddID(id, idLists);
         checkAndAddName(name, namesLists);
     }
@@ -101,10 +104,15 @@ public:
         id = newID;
     }
 
+    void setInfo(const std::string& info){
+        addInfo = info;
+    }
+
     // Геттеры:
 
     std::string getName() const { return name; }
     int getID() const { return id; }
+    std::string getInfo() const { return addInfo; }
 
     const std::vector<std::string>& getAllNames() const{
         return namesLists;
@@ -125,8 +133,6 @@ public:
             namesLists.erase(target_name);
         }
     }
-
-    
 };
 
 class Group; // Чтобы не было циклических зависимостей
@@ -137,6 +143,7 @@ private:
 
     // Функция для задания ссылки группы, в которой состоит пользователь
     friend class Group;
+    friend class UserGroupManager;
     void setGroup(std::shared_ptr<Group> group){
         groupLink = group;
     }
@@ -144,7 +151,7 @@ private:
 public:
     User(): Entity() {}
     User(const std::string& userName) : Entity(userName){};
-    User(const std::string& userName, int userID) : Entity(userName, userID) {}    
+    User(const std::string& userName, int userID, const std::string& userInfo = "_") : Entity(userName, userID, userInfo) {}    
 
     // Функция для получения ссылки на группу, к которой принадлежит пользователь
     const std::shared_ptr<Group> getGroupLink() const{               
@@ -159,7 +166,7 @@ class Group : public Entity, public enable_shared_from_this<Group> {
 public:
     Group() : Entity() {}
     Group(const std::string& groupName) : Entity(groupName){}
-    Group(const std::string& groupName, int groupID) : Entity(groupName, groupID) {}
+    Group(const std::string& groupName, int groupID, const std::string& groupInfo = "_") : Entity(groupName, groupID, groupInfo) {}
 
     ~Group() override {
         usersList.clear();
@@ -203,52 +210,246 @@ public:
     }
 
     void printInfo(){
-        std::cout << "Имя: " << name << " ID: " << id << std::endl;
+        std::cout << "Имя: " << name << " ID: " << id << " Доп. информация: " << addInfo << std::endl;
         std::cout << "Список участников: ";
         if (usersList.empty()) {
             std::cout << "(нет участников)" << std::endl;
             return;
         }
         for (const auto& user : usersList) {
-            std::cout << user->getName() << " (ID: " << user->getID() << "), ";
+            std::cout << user->getName() << " (ID: " << user->getID() << ", Доп. информация: " << user->getInfo() << "), ";
         }
         std::cout << std::endl;
     }
-        
 };
 
 // Теперь определяем User::printInfo(), так как Group уже полностью определён
 void User::printInfo() {
-    std::cout << "Имя: " << name << " ID: " << id << std::endl;
+    std::cout << "Имя: " << name << " ID: " << id << " Доп. информация: " << addInfo << std::endl;
     if (auto group = groupLink.lock()) {
         std::cout << "Имя группы: " << group->getName() 
-                  << "Адрес группы: " << group.get() << std::endl;
+                  << " Адрес группы: " << group.get() 
+                  << " Доп. информация группы: " << group->getInfo() << std::endl;
     } else {
         std::cout << "Группа: nullptr" << std::endl;
     }
 }
 
 
+class UserGroupManager {
+private:
+    map<int, shared_ptr<User>> users;
+    map<int, shared_ptr<Group>> groups;
+
+public:
+    // Создание пользователя
+    void createUser(int userId, const string& username, const string& userInfo = "_") {
+        if (users.find(userId) != users.end()) {
+            cout << "Ошибка: пользователь с ID " << userId << " уже существует" << endl;
+            return;
+        }
+        try {
+            users[userId] = make_shared<User>(username, userId, userInfo);
+            cout << "Пользователь " << username << " (ID: " << userId << ", Доп. информация: " << userInfo << ") успешно создан" << endl;
+        } catch (const exception& e) {
+            cout << "Ошибка создания пользователя: " << e.what() << endl;
+        }
+    }
+
+    // Удаление пользователя
+    void deleteUser(int userId) {
+        auto it = users.find(userId);
+        if (it == users.end()) {
+            cout << "Ошибка: пользователь с ID " << userId << " не найден" << endl;
+            return;
+        }
+        
+        // Удаляем пользователя из всех групп
+        if (auto group = it->second->getGroupLink()) {
+            group->removeUser(it->second);
+        }
+        
+        users.erase(it);
+        cout << "Пользователь с ID " << userId << " успешно удален" << endl;
+    }
+
+    // Вывод всех пользователей
+    void allUsers() const {
+        if (users.empty()) {
+            cout << "Нет ни одного пользователя" << endl;
+            return;
+        }
+        
+        cout << "Список всех пользователей:" << endl;
+        for (const auto& [id, user] : users) {
+            user->printInfo();
+            cout << "-------------------" << endl;
+        }
+    }
+
+    // Получение информации о пользователе
+    void getUser(int userId) const {
+        auto it = users.find(userId);
+        if (it == users.end()) {
+            cout << "Ошибка: Пользователя с ID " << userId << " не найден" << endl;
+            return;
+        }
+        
+        cout << "Информация о пользователе:" << endl;
+        it->second->printInfo();
+    }
+
+    // Создание группы
+    void createGroup(int groupId, const string& groupName, const string& groupInfo = "_") {
+        if (groups.find(groupId) != groups.end()) {
+            cout << "Ошибка: Группа с ID " << groupId << " уже существует" << endl;
+            return;
+        }
+        try {
+            groups[groupId] = make_shared<Group>(groupName, groupId, groupInfo);
+            cout << "Группа " << groupName << " (ID: " << groupId << ", Доп. информация: " << groupInfo << ") успешно создана" << endl;
+        } catch (const exception& e) {
+            cout << "Ошибка создания группы: " << e.what() << endl;
+        }
+    }
+
+    // Удаление группы
+    void deleteGroup(int groupId) {
+        auto it = groups.find(groupId);
+        if (it == groups.end()) {
+            cout << "Ошибка: Группа с ID " << groupId << " не найдена" << endl;
+            return;
+        }
+        
+        // Удаляем ссылки на группу у всех пользователей
+        for (auto& user : it->second->getUsers()) {
+            user->setGroup(nullptr);
+        }
+        
+        groups.erase(it);
+        cout << "Группа с ID " << groupId << " успешно удалена" << endl;
+    }
+
+    // Вывод всех групп
+    void allGroups() const {
+        if (groups.empty()) {
+            cout << "Нет никаких групп" << endl;
+            return;
+        }
+        
+        cout << "Список всех групп:" << endl;
+        for (const auto& [id, group] : groups) {
+            group->printInfo();
+            cout << "-------------------" << endl;
+        }
+    }
+
+    // Получение информации о группе
+    void getGroup(int groupId) const {
+        auto it = groups.find(groupId);
+        if (it == groups.end()) {
+            cout << "Ошибка: Группа с ID " << groupId << " не найдена" << endl;
+            return;
+        }
+        
+        cout << "Информация о группе:" << endl;
+        it->second->printInfo();
+    }
+
+    // Добавление пользователя в группу
+    void addUserToGroup(int userId, int groupId) {
+        auto userIt = users.find(userId);
+        auto groupIt = groups.find(groupId);
+        
+        if (userIt == users.end()) {
+            cout << "Ошибка: Пользователь с ID " << userId << " не найден" << endl;
+            return;
+        }
+        if (groupIt == groups.end()) {
+            cout << "Ошибка: Группа с ID " << groupId << " не найдена" << endl;
+            return;
+        }
+        
+        try {
+            groupIt->second->addUser(userIt->second);
+            cout << "Пользователь " << userIt->second->getName() << " (ID: " << userId 
+                 << ") добавлен в группу " << groupIt->second->getName() 
+                 << " (ID: " << groupId << ")" << endl;
+        } catch (const exception& e) {
+            cout << "Ошибка: " << e.what() << endl;
+        }
+    }
+
+    // Удаление пользователя из группы
+    void removeUserFromGroup(int userId, int groupId) {
+        auto userIt = users.find(userId);
+        auto groupIt = groups.find(groupId);
+        
+        if (userIt == users.end()) {
+            cout << "Ошибка: Пользователь с ID " << userId << " не найден" << endl;
+            return;
+        }
+        if (groupIt == groups.end()) {
+            cout << "Ошибка: Группа с ID " << groupId << " не найдена" << endl;
+            return;
+        }
+        
+        try {
+            groupIt->second->removeUser(userIt->second);
+            cout << "Пользователь " << userIt->second->getName() << " (ID: " << userId 
+                 << ") удален из группы " << groupIt->second->getName() 
+                 << " (ID: " << groupId << ")" << endl;
+        } catch (const exception& e) {
+            cout << "Ошибка: " << e.what() << endl;
+        }
+    }
+
+    // Установка дополнительной информации для пользователя
+    void setUserInfo(int userId, const string& info) {
+        auto it = users.find(userId);
+        if (it == users.end()) {
+            cout << "Ошибка: Пользователь с ID " << userId << " не найден" << endl;
+            return;
+        }
+        it->second->setInfo(info);
+        cout << "Доп. информация для пользователя " << it->second->getName() 
+             << " (ID: " << userId << ") установлена: " << info << endl;
+    }
+
+    // Установка дополнительной информации для группы
+    void setGroupInfo(int groupId, const string& info) {
+        auto it = groups.find(groupId);
+        if (it == groups.end()) {
+            cout << "Ошибка: Группа с ID " << groupId << " не найдена" << endl;
+            return;
+        }
+        it->second->setInfo(info);
+        cout << "Доп. информация для группы " << it->second->getName() 
+             << " (ID: " << groupId << ") установлена: " << info << endl;
+    }
+};
+
 int main() {
-
-    auto u5 = std::make_shared<User>("Dimon");
-    u5->printInfo();
-    auto u6 = std::make_shared<User>("Ilyha");
-    u6->printInfo();
-    auto u7 = std::make_shared<User>("Nekit-Pityx");
-    u7->printInfo();
-
-    auto g1 = std::make_shared<Group>("KGKP");
-    g1->printInfo();
-
-    g1->addUser(u5);    
-
-    g1->addUser(u6);    
-
-    g1->addUser(u7);
+    UserGroupManager manager;
     
-    g1->printInfo();
+    manager.createUser(1, "Dimon", "Любит программирование");
+    manager.createUser(2, "Ilyha", "Отличник");
+    manager.createUser(3, "Nekit-Pityx", "Весельчак");
+    
+    manager.createGroup(4, "KGKP", "Группа программистов");
+    
+    manager.addUserToGroup(1, 4);
+    manager.addUserToGroup(2, 4);
+    manager.addUserToGroup(3, 4);
+    
+    manager.allUsers();
+    manager.allGroups();
+    
+    manager.setUserInfo(2, "Очень умный");
+    manager.setGroupInfo(4, "Лучшая группа");
+    
+    manager.getUser(2);
+    manager.getGroup(4);
 
-   
     return 0;
 }
