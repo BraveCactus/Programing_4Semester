@@ -43,7 +43,6 @@ public:
 
     bool add(const Timestamp& ts) {
         if (ts.rank() >= max_size_ || queue_.size() >= max_size_) {
-            std::cerr << "Ошибка: невозможно добавить запрос в очередь" << std::endl;
             return false;
         }
         queue_.insert(ts);
@@ -51,19 +50,12 @@ public:
     }
 
     bool remove(int rank) {
-        if (rank >= max_size_) {
-            std::cerr << "Ошибка: неверный ранг для удаления" << std::endl;
-            return false;
-        }
-
         auto it = std::find_if(queue_.begin(), queue_.end(),
                              [rank](const Timestamp& ts) { return ts.rank() == rank; });
-        
         if (it != queue_.end()) {
             queue_.erase(it);
             return true;
         }
-        std::cerr << "Ошибка: запрос с рангом " << rank << " не найден" << std::endl;
         return false;
     }
 
@@ -71,8 +63,15 @@ public:
         return !queue_.empty() && queue_.begin()->rank() == rank;
     }
 
+    bool empty() const {
+        return queue_.empty();
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const RequestQueue& rq) {
-        for (const auto& ts : rq.queue_) os << ts << "; ";
+        if (rq.queue_.empty()) {
+            return os << "empty";
+        }
+        for (const auto& ts : rq.queue_) os << ts << " ";
         return os;
     }
 };
@@ -87,7 +86,7 @@ void alarm_handler(int) { alarm_flag = 0; }
 void increment_time() { local_time += TIME_INCREMENT; }
 
 void update_time(int received_time) {
-    local_time = std::max(local_time, received_time) + TIME_INCREMENT;
+    local_time = std::max(local_time, received_time + TIME_INCREMENT);
 }
 
 void set_random_timer(int seconds) {
@@ -101,28 +100,25 @@ void checkState(int status) {
 }
 
 void sendToAll(int sender_rank, int processes, MessageType type) {
+    increment_time();
     for (int i = 0; i < processes; ++i) {
         if (i != sender_rank) {
             checkState(MPI_Send(&local_time, 1, MPI_INT, i, static_cast<int>(type), MPI_COMM_WORLD));
         }
     }
 
-    const char* msg_type_str = "";
     switch(type) {
         case MessageType::REQUEST: 
-            msg_type_str = "REQUEST";
-            printf("Процесс %d: отправил всем сообщение REQUEST; время: %d\n", sender_rank, local_time);
+            printf("Node %d send REQUEST to all at time %d\n", sender_rank, local_time);
             break;
         case MessageType::RELEASE: 
-            msg_type_str = "RELEASE";
-            printf("Процесс %d: отправил всем сообщение RELEASE; время: %d\n", sender_rank, local_time);
+            printf("Node %d send RELEASE to all at time %d\n", sender_rank, local_time);
             break;
         case MessageType::FIN: 
-            msg_type_str = "FIN";
-            printf("Процесс %d: отправил всем сообщение FIN; время: %d\n", sender_rank, local_time);
-            break;        
-    }
-    increment_time();
+            printf("Node %d send FIN to all at time %d\n", sender_rank, local_time);
+            break;
+        default: break;
+    }    
 }
 
 void handle_messages(int current_rank, RequestQueue& queue, bool count_replies) {
@@ -132,7 +128,7 @@ void handle_messages(int current_rank, RequestQueue& queue, bool count_replies) 
     while (true) {
         checkState(MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &has_message, &status));
         if (!has_message) break;
-
+        increment_time();
         int received_time;
         checkState(MPI_Recv(&received_time, 1, MPI_INT, status.MPI_SOURCE, 
                          status.MPI_TAG, MPI_COMM_WORLD, &status));
@@ -142,37 +138,43 @@ void handle_messages(int current_rank, RequestQueue& queue, bool count_replies) 
         
         switch (msg_type) {
             case MessageType::REQUEST:
-                printf("Процесс %d: получил REQUEST от %d; время: %d\n", 
-                      current_rank, status.MPI_SOURCE, local_time);
+                printf("Node %d receive REQUEST (%d,%d) at time %d\n",
+                      current_rank, received_time, status.MPI_SOURCE, local_time);
                 if (!queue.add(Timestamp(received_time, status.MPI_SOURCE))) {
-                    printf("Ошибка: невозможно добавить запрос в очередь\n");
+                    printf("Error: Failed to add request to queue\n");
                 }
-                std::cout << "Процесс " << current_rank << ": очередь (после REQUEST): " << queue << std::endl;
-                checkState(MPI_Send(&local_time, 1, MPI_INT, status.MPI_SOURCE, 
-                             static_cast<int>(MessageType::REPLY), MPI_COMM_WORLD));
+                printf("Node %d queue: ", current_rank);
+                std::cout << queue << std::endl;
                 increment_time();
-                printf("Процесс %d: отправил REPLY процессу %d; время: %d\n", 
+                checkState(MPI_Send(&local_time, 1, MPI_INT, status.MPI_SOURCE, 
+                             static_cast<int>(MessageType::REPLY), MPI_COMM_WORLD));                
+                printf("Node %d send REPLY to %d at time %d\n",
                       current_rank, status.MPI_SOURCE, local_time);
                 break;
 
             case MessageType::REPLY:
-                printf("Процесс %d: получил REPLY от %d; время: %d\n", 
-                      current_rank, status.MPI_SOURCE, local_time);
-                if (count_replies && local_time != received_time) permsCount++;
+                printf("Node %d receive REPLY (%d,%d) at time %d",
+                      current_rank, received_time, status.MPI_SOURCE, local_time);
+                if (count_replies) {
+                    permsCount++;
+                    printf(" nperms=%d", permsCount);
+                }
+                printf("\n");
                 break;
 
             case MessageType::RELEASE:
-                printf("Процесс %d: получил RELEASE от %d; время: %d\n", 
-                      current_rank, status.MPI_SOURCE, local_time);
+                printf("Node %d receive RELEASE (%d,%d) at time %d\n",
+                      current_rank, received_time, status.MPI_SOURCE, local_time);
                 if (!queue.remove(status.MPI_SOURCE)) {
-                    printf("Ошибка: не удалось удалить запрос из очереди\n");
+                    printf("Error: Failed to remove request from queue\n");
                 }
-                std::cout << "Процесс " << current_rank << ": очередь (после RELEASE): " << queue << std::endl;
+                printf("Node %d queue: ", current_rank);
+                std::cout << queue << std::endl;
                 break;
 
             case MessageType::FIN:
-                printf("Процесс %d: получил FIN от %d; время: %d\n", 
-                      current_rank, status.MPI_SOURCE, local_time);
+                printf("Node %d receive FIN (%d,%d) at time %d\n",
+                      current_rank, received_time, status.MPI_SOURCE, local_time);
                 finsCount++;
                 break;
         }
@@ -194,36 +196,38 @@ void process_work(int rank, int processes) {
     srand(rank); 
 
     for (int i = 0; i < REPEAT_COUNT; ++i) {
-        printf("\nПроцесс %d: итерация %d\n", rank, i+1);
-        printf("Процесс %d: вход в пролог; время: %d\n", rank, local_time);
+        printf("\nNode %d: ENTER PROLOGUE at time %d\n", rank, local_time);
 
-        if (!queue.add(Timestamp(local_time, rank))) {
-            printf("Ошибка: не удалось добавить собственный запрос\n");
-        }
-        std::cout << "Процесс " << rank << ": очередь (в прологе): " << queue << std::endl;
         sendToAll(rank, processes, MessageType::REQUEST);
+        if (!queue.add(Timestamp(local_time, rank))) {
+            printf("Error: Failed to add own request\n");
+        }
+        printf("Node %d queue: ", rank);
+        std::cout << queue << std::endl;
+        
         permsCount = 0;
 
         while (permsCount < processes - 1 || !queue.is_front(rank)) {
             handle_messages(rank, queue, true);
         }
-        increment_time();
+        // increment_time();
 
-        printf("Процесс %d: вход в критическую секцию; время: %d\n", rank, local_time);
+        printf("Node %d: ENTER CRITICAL SECTION at time %d\n", rank, local_time);
         work(rank, CRITICAL_SECTION_TIME, queue);
-        increment_time();
+        // increment_time();
 
-        printf("Процесс %d: выход из критической секции; время: %d\n", rank, local_time);
-        printf("Процесс %d: вход в эпилог; время: %d\n", rank, local_time);
+        printf("Node %d: EXIT CRITICAL SECTION at time %d\n", rank, local_time);
+        printf("Node %d: ENTER EPILOGUE at time %d\n", rank, local_time);
         if (!queue.remove(rank)) {
-            printf("Ошибка: не удалось удалить собственный запрос\n");
+            printf("Error: Failed to remove own request\n");
         }
-        std::cout << "Процесс " << rank << ": очередь (в эпилоге): " << queue << std::endl;
+        printf("Node %d queue: ", rank);
+        std::cout << queue << std::endl;
         sendToAll(rank, processes, MessageType::RELEASE);
 
-        printf("Процесс %d: вход в remainder секцию; время: %d\n", rank, local_time);
+        printf("Node %d: ENTER REMAINDER SECTION at time %d\n", rank, local_time);
         work(rank, REMAINDER_SECTION_TIME, queue);
-        increment_time();
+        // increment_time();
     }
 
     sendToAll(rank, processes, MessageType::FIN);
@@ -231,7 +235,7 @@ void process_work(int rank, int processes) {
         handle_messages(rank, queue, false);
     }
 
-    printf("Процесс %d: завершил работу; время: %d\n", rank, local_time);
+    printf("Node %d: FINISH WORK at time %d\n", rank, local_time);
 }
 
 int main(int argc, char* argv[]) {
