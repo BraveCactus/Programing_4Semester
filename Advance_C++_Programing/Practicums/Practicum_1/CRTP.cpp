@@ -33,9 +33,21 @@ public:
 
 };
 
-int main(int argc, char* argv[]){    Devired d;
+class OtherDevired: public CRTPBase<OtherDevired>{
+public:
+    void g(){
+        std::cout << "Hi from OtherDevired" << std::endl;
+    }
+};
 
-    d.f();
+int main(int argc, char* argv[]){    
+    Devired d1;
+
+    d1.f();
+
+    OtherDevired d2;
+
+    d2.f();
 
     return 0;
 }
