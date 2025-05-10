@@ -1,21 +1,21 @@
 template <typename T>
 class MyUnique {
-    T* ptr_ = nullptr;
+    T* ptr_ = nullptr;  // Сырой указатель на объект
 
-
-    MyUnique(const MyUnique&)            = delete;
+    // Запрещаем копирование
+    MyUnique(const MyUnique&) = delete;
     MyUnique& operator=(const MyUnique&) = delete;
 
 public:
+    // Конструктор, принимающий rvalue-ссылку на указатель
     MyUnique(T*&& new_ptr) : ptr_{new_ptr} {}
-    T* operator->() const {
-        return ptr_;
-    }
-    T& operator*() const {
-        return *ptr_;
-    }
-};
 
+    // Оператор доступа к членам (->)
+    T* operator->() const { return ptr_; }
+
+    // Оператор разыменования (*)
+    T& operator*() const { return *ptr_; }
+};
 class MyClass {
 public:
     int a;
@@ -41,11 +41,15 @@ public:
 };
 
 int main() {
-    const OtherClass smth;
-    auto             val = smth.value->a;
-    smth.value->a        = 7;
-    (*smth.value).a      = 5;
-    (*gl_value).a        = 10;
-    // value = value2;
-    gl_value->a = 6;
+    const OtherClass smth;  // Создаёт MyUnique<MyClass> внутри
+
+    // Доступ к полю 'a' через operator->
+    auto val = smth.value->a;  // val = 3
+
+    // Изменение поля 'a'
+    smth.value->a = 7;         // Теперь a = 7
+    (*smth.value).a = 5;       // Теперь a = 5 (через operator*)
+    (*gl_value).a = 10;        // Изменение глобального объекта (a = 10)
+
+    gl_value->a = 6;           // Изменение через operator->
 }
