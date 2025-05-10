@@ -1,56 +1,62 @@
 #include <iostream>
 using namespace std;
 
-int* f(int arg ,int (*)(float)){
-    // cout << "Hi!" << endl;
-    return &arg;
+// Функция, принимающая int и указатель на функцию (принимающую float и возвращающую int)
+// Возвращает указатель на свой аргумент (опасно, т.к. arg - локальная переменная)
+int* f(int arg, int (*)(float)) {
+    return &arg;  // Опасное поведение: возврат указателя на локальную переменную
 }
 
+// Шаблонная функция, принимающая объект builder с методом create()
 template <typename T>
-auto makeAddProcess(const T& builder) -> decltype(builder.create()){
+auto makeAddProcess(const T& builder) -> decltype(builder.create()) {
     auto res = builder.create();
-    return decltype(builder.create())();
+    return res;  // Возвращаем результат create(), а не новый вызов
 }
 
+// Шаблонная функция для вычисления
 template <typename T>
-float calc(const T arg){
-    return arg / 2.0;
+float calc(const T arg) {
+    return arg / 2.0f;
 }
 
+// Шаблонная функция с условием
 template <typename T>
-auto func(const T a){
-    //Важно чтобы return возвращал одинаковые типы данных, исправляем с помощью 0 -> 0.0f (чтобы тоже был float как и calc)
-    if (a < 5){
-        return 0.0f;
+auto func(const T a) {
+    if (a < 5) {
+        return 0.0f;  // Все return должны возвращать один тип (float)
     } else {
         return calc(a);
     }
-
-    if constexpr 
-//Будет ошибка компиляции
 }
 
-
-class Builder{
+class Builder {
 public:
-    int create() const; // Важно, чтобы был const
+    int create() const { return 42; }  // Реализация метода create()
 };
 
-int main(){
+void some_func(int a){
+    cout << a << endl;
+}
 
+int main() {
     int a = 6;
+    const int& ref_a = a;  // Константная ссылка на a
 
-    const int & ref_a = a;
-
-    int* (*ptr)(int, int (*)(float)) = &f; //Указатель на функцию
+    // Указатель на функцию f
+    int* (*ptr)(int, int (*)(float)) = &f;
     
     Builder builder;
+    makeAddProcess(builder);  // Вызов шаблонной функции
 
-    makeAddProcess(builder);
+    auto* s = &f;  // Автоматическое определение типа указателя на функцию
+    auto& b = ref_a;  // Ссылка того же типа, что и ref_a
 
-    auto*s = &f;
+    cout << func(4) << endl;  // Выведет 0
+    cout << func(6) << endl;  // Выведет 3
 
-    auto& b = ref_a;
+    auto d = &some_func;
+    d(6);
 
-    cout << func(4) << endl;
+    return 0;
 }
