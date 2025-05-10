@@ -1,0 +1,40 @@
+//Пример специализации
+/*
+Важно специализация должна стоять раньше перегрузки
+*/
+#include <iostream>
+
+template <typename T> class Stack{
+    T *b;
+};
+
+// Явная специализация под int
+template <> class Stack<int> {
+    int* content_;
+};
+
+template <typename T>
+void foo(T x){
+    std::cout << "Специализация!" << std::endl;
+};
+
+template <> void foo<int>(int x){
+    std::cout << "int!" << std::endl;
+};
+
+template <> void foo<double>(double x){
+    std::cout << "double!" << std::endl;
+};
+
+template <> void foo<double*>(double* x){
+    std::cout << "double*!" << std::endl;
+};
+
+int main(){
+    foo(12);
+    foo(2.4);
+    double a = 4.8;
+    double& q = a;
+    double* s = &q;
+    foo(s);
+}
