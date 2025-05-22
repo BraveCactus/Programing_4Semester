@@ -1,0 +1,11 @@
+22. Примеры статического полиморфизма в С++.
+Перегрузка функций:
+
+cpp
+void print(int i) { ... }
+void print(double d) { ... }
+Шаблоны:
+
+cpp
+template <typename T>
+T max(T a, T b) { return a > b ? a : b; }
