@@ -1,0 +1,14 @@
+60. Замена структурам разных размеров в современном С++.
+Современные альтернативы:
+
+std::void_t (C++17)
+
+cpp
+template <typename, typename = void>
+struct has_type : std::false_type {};
+
+template <typename T>
+struct has_type<T, std::void_t<typename T::type>> : std::true_type {};
+if constexpr (C++17)
+
+Концепты (C++20)

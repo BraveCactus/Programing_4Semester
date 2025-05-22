@@ -1,0 +1,16 @@
+59. Зачем в старом С++ (до С++11) для реализации SFINAE создавались структуры разных размеров?
+Идея: Использовать sizeof, который не может быть применен к неполным типам.
+
+Пример:
+
+cpp
+template <typename T>
+class is_complete {
+    typedef char no[1];
+    typedef char yes[2];
+    template <typename U, size_t = sizeof(U)>
+    static yes& test(U*);
+    static no& test(...);
+public:
+    static const bool value = sizeof(test<T>(0)) == sizeof(yes);
+};
