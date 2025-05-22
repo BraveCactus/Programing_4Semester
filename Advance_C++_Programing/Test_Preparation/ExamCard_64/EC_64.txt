@@ -1,0 +1,13 @@
+64. Реализация виртуальных функций в CRTP.
+Не рекомендуется, так как CRTP предназначен для статического полиморфизма.
+
+Если необходимо: Можно комбинировать с обычным наследованием:
+
+cpp
+template <typename Derived>
+class Base {
+public:
+    void foo() { static_cast<Derived*>(this)->fooImpl(); }
+    virtual void fooImpl() = 0;
+};
+65. Реализац

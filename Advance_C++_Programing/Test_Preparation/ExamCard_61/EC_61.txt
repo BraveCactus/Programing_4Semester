@@ -1,0 +1,55 @@
+61.	CRTP. Определение. Зачем нужно.
+
+/*
+Опр: CRTP (Curiously Recurring Template Pattern) — это  шаблон проектирования в C++, 
+     который позволяет реализовать статический полиморфизм (без накладных расходов на виртуальные функции) 
+     и инъекцию поведения в производные классы
+     
+Основные цели CRTP:
+    1) Избежание накладных расходов виртуальных функций
+       В отличие от динамического полиморфизма (через virtual), CRTP не требует таблицы виртуальных методов (vtable), 
+       что ускоряет выполнение.
+
+    2) Инъекция общей логики в производные классы
+       Базовый класс может предоставлять готовые методы, использующие специфичные для производного класса функции.
+
+    3) Статический (компиляторный) полиморфизм
+       Все типы и вызовы разрешаются на этапе компиляции.
+*/
+
+#include <iostream>
+
+template<typename T>
+class CRTPBase{
+public:
+    void f(){
+        static_cast<T*>(this)->g();
+    }
+};
+
+class Devired: public CRTPBase<Devired>{
+public:
+    void g(){
+        std::cout << "Hi from Derived!" << std::endl;
+    }
+
+};
+
+class OtherDevired: public CRTPBase<OtherDevired>{
+public:
+    void g(){
+        std::cout << "Hi from OtherDevired" << std::endl;
+    }
+};
+
+int main(int argc, char* argv[]){    
+    Devired d1;
+
+    d1.f();
+
+    OtherDevired d2;
+
+    d2.f();
+
+    return 0;
+}

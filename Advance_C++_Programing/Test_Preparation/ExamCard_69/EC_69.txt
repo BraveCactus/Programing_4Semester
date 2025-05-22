@@ -1,0 +1,14 @@
+69. Чем плохи SFINAE ограничения? Приведите пример.
+Проблемы:
+
+Сложный синтаксис
+
+Нечитаемые сообщения об ошибках
+
+Хрупкость
+
+Пример плохого SFINAE:
+
+cpp
+template <typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
+void foo(T) { ... }

@@ -1,0 +1,13 @@
+63. Реализация чисто виртуальных функций в CRTP.
+Нельзя использовать чисто виртуальные функции, так как CRTP - это статический полиморфизм.
+
+Альтернатива: Ошибка времени компиляции:
+
+cpp
+template <typename Derived>
+class Base {
+public:
+    void foo() {
+        static_assert(false, "Must implement foo in derived class");
+    }
+};

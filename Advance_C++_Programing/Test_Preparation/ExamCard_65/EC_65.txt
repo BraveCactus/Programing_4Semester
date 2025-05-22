@@ -1,0 +1,13 @@
+65. Реализация методов для удаления объекта класса в CRTP.
+Пример:
+
+cpp
+template <typename Derived>
+class ObjectCounter {
+protected:
+    ~ObjectCounter() = default;
+public:
+    void destroy() { delete static_cast<Derived*>(this); }
+};
+
+class MyClass : public ObjectCounter<MyClass> { ... };

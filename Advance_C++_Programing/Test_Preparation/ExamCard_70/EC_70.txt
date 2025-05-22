@@ -1,0 +1,14 @@
+70. Что такое requires-expression? Отличия requires-expression от requires-clause.
+requires-expression: Выражение, проверяющее ограничения:
+
+cpp
+template <typename T>
+concept Addable = requires(T a, T b) {
+    { a + b } -> std::same_as<T>;
+};
+requires-clause: Часть объявления, накладывающая ограничения:
+
+cpp
+template <typename T>
+requires Addable<T>
+T add(T a, T b) { return a + b; }
