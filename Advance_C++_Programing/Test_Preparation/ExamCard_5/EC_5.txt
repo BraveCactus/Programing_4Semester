@@ -1,0 +1,74 @@
+5.	Git. Отличия rebase/merge/cherry-pick
+
+merge:
+
+1) Создает новый коммит слияния
+
+2) Сохраняет историю как есть
+
+3) Пример: git merge feature
+
+Пример:
+    git switch main      # переключаемся на main
+    git merge feature      # сливаем feature в main (fast-forward)
+
+    A --- B --- C (main)  
+         \  
+          D --- E (feature)  
+
+    После `git merge feature`:  
+    A --- B --- C --- D --- E (main, feature)
+
+rebase:
+В отличие от merge, она не создаёт коммит слияния, а делает историю линейной
+
+1) Перемещает коммиты на верх другой ветки
+
+2) Делает историю линейной
+
+3) Пример: git rebase main
+
+Пример:
+    git switch feature      # переключаемся на feature  
+    git rebase main        # переносим коммиты feature на верх main  
+
+    A --- B --- C (main)  
+         \  
+          D --- E (feature)  
+    
+    После git rebase main (из ветки feature):
+
+    A --- B --- C (main)  
+            \  
+             D' --- E' (feature) 
+
+    (коммиты D и E пересоздаются как D' и E' с новыми хешами)
+
+cherry-pick:
+
+Берёт изменения из указанного коммита.
+
+Создает новый коммит с такими же изменениями в текущей ветке (но с другим хешем).
+
+1) Копирует конкретный коммит в текущую ветку
+
+2) Пример: git cherry-pick abc123
+
+Пример:
+
+    git cherry-pick <хеш-коммита>  
+
+    # Допустим, есть коммит `a1b2c3d` в ветке `feature`, который нужно перенести в `main`
+    git switch main              # переключаемся на целевую ветку  
+    git cherry-pick a1b2c3d      # применяем коммит 
+
+    A --- B --- C (main)  
+         \  
+          D --- E (feature)  
+
+    После `git cherry-pick D`:  
+    A --- B --- C --- D' (main)  
+            \  
+            D --- E (feature)  
+    (коммит D скопирован как D' с новым хешем)
+
