@@ -1,0 +1,64 @@
+80.	Паттерн Адаптер
+
+
+class Target {
+public:
+    virtual void request() = 0;
+};
+
+class Adaptee {
+public:
+    void specificRequest() { ... }
+};
+
+class Adapter : public Target {
+    Adaptee* adaptee;
+public:
+    void request() override { adaptee->specificRequest(); }
+};
+
+
+Паттерн "Адаптер" (Adapter)
+Назначение: Преобразует интерфейс одного класса в интерфейс, ожидаемый клиентом. Позволяет работать с несовместимыми интерфейсами вместе.
+
+Пример
+#include <iostream>
+
+// ===== 1. Старый класс (несовместимый интерфейс) =====
+class LegacyRectangle {
+public:
+    void draw(int x1, int y1, int x2, int y2) {
+        std::cout << "LegacyRectangle: (" << x1 << ", " << y1 
+                  << ") to (" << x2 << ", " << y2 << ")\n";
+    }
+};
+
+// ===== 2. Новый интерфейс (к которому нужно адаптироваться) =====
+class Shape {
+public:
+    virtual ~Shape() = default;
+    virtual void draw(int x, int y, int width, int height) = 0;
+};
+
+// ===== 3. Адаптер (преобразует старый интерфейс в новый) =====
+class RectangleAdapter : public Shape {
+private:
+    LegacyRectangle legacyRect; // Объект старого класса
+
+public:
+    void draw(int x, int y, int width, int height) override {
+        // Преобразуем новые параметры в старый формат:
+        int x2 = x + width;
+        int y2 = y + height;
+        legacyRect.draw(x, y, x2, y2);
+    }
+};
+
+// ===== 4. Клиентский код (работает с новым интерфейсом) =====
+int main() {
+    Shape* shape = new RectangleAdapter();
+    shape->draw(10, 20, 30, 40); // Вызовет адаптированный метод
+
+    delete shape;
+    return 0;
+}

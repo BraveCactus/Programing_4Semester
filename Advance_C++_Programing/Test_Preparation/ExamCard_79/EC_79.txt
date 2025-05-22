@@ -1,0 +1,115 @@
+79. Применение CRTP при реализации паттерна Декоратор.
+Идея: Статический декоратор с CRTP.
+
+Пример:
+
+cpp
+template <typename Derived>
+class Decorator {
+public:
+    void operation() {
+        static_cast<Derived*>(this)->before();
+        // основная операция
+        static_cast<Derived*>(this)->after();
+    }
+};
+
+class MyDecorator : public Decorator<MyDecorator> {
+public:
+    void before() { ... }
+    void after() { ... }
+};
+
+Пример в C++
+Допустим, у нас есть базовый класс Coffee, и мы хотим динамически добавлять к нему добавки (молоко, сахар, сироп и т. д.), не создавая подклассы для каждой комбинации.
+
+1. Базовый класс и его реализация
+cpp
+#include <iostream>
+#include <string>
+
+// Абстрактный базовый класс "Напиток"
+class Coffee {
+public:
+    virtual ~Coffee() = default;
+    virtual std::string getDescription() const = 0;
+    virtual double cost() const = 0;
+};
+
+// Конкретная реализация "Простой кофе"
+class SimpleCoffee : public Coffee {
+public:
+    std::string getDescription() const override {
+        return "Простой кофе";
+    }
+
+    double cost() const override {
+        return 1.0; // Базовая цена
+    }
+};
+2. Абстрактный декоратор
+cpp
+// Абстрактный декоратор (должен наследоваться от Coffee)
+class CoffeeDecorator : public Coffee {
+protected:
+    Coffee* coffee; // Обёртываемый объект
+
+public:
+    explicit CoffeeDecorator(Coffee* coffee) : coffee(coffee) {}
+    ~CoffeeDecorator() override { delete coffee; }
+
+    std::string getDescription() const override {
+        return coffee->getDescription();
+    }
+
+    double cost() const override {
+        return coffee->cost();
+    }
+};
+3. Конкретные декораторы (добавки)
+cpp
+// Декоратор "Молоко"
+class MilkDecorator : public CoffeeDecorator {
+public:
+    explicit MilkDecorator(Coffee* coffee) : CoffeeDecorator(coffee) {}
+
+    std::string getDescription() const override {
+        return coffee->getDescription() + ", молоко";
+    }
+
+    double cost() const override {
+        return coffee->cost() + 0.5; // +50 центов
+    }
+};
+
+// Декоратор "Сахар"
+class SugarDecorator : public CoffeeDecorator {
+public:
+    explicit SugarDecorator(Coffee* coffee) : CoffeeDecorator(coffee) {}
+
+    std::string getDescription() const override {
+        return coffee->getDescription() + ", сахар";
+    }
+
+    double cost() const override {
+        return coffee->cost() + 0.2; // +20 центов
+    }
+};
+4. Использование
+cpp
+int main() {
+    // Создаём базовый кофе
+    Coffee* coffee = new SimpleCoffee();
+    std::cout << coffee->getDescription() << ": $" << coffee->cost() << std::endl;
+
+    // Добавляем молоко
+    coffee = new MilkDecorator(coffee);
+    std::cout << coffee->getDescription() << ": $" << coffee->cost() << std::endl;
+
+    // Добавляем сахар
+    coffee = new SugarDecorator(coffee);
+    std::cout << coffee->getDescription() << ": $" << coffee->cost() << std::endl;
+
+    delete coffee; // Удаляем всю цепочку декораторов
+    return 0;
+}

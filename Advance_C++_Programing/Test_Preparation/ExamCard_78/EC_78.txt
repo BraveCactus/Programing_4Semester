@@ -1,0 +1,31 @@
+78. Паттерн Декоратор.
+Назначение: Динамическое добавление обязанностей объекту.
+
+Пример:
+
+cpp
+class Component {
+public:
+    virtual void operation() = 0;
+};
+
+class ConcreteComponent : public Component {
+public:
+    void operation() override { ... }
+};
+
+class Decorator : public Component {
+    Component* component;
+public:
+    Decorator(Component* c) : component(c) {}
+    void operation() override { component->operation(); }
+};
+
+class ConcreteDecorator : public Decorator {
+public:
+    void operation() override {
+        Decorator::operation();
+        addedBehavior();
+    }
+    void addedBehavior() { ... }
+};

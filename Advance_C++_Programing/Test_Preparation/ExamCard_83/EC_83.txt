@@ -1,0 +1,109 @@
+83.	Паттерн Фабрика
+
+1. Простая фабрика (Simple Factory)
+(Упрощённая версия, не является полноценным паттерном, но часто используется.)
+
+Пример: Фабрика, создающая разные типы документов (Word, PDF).
+
+cpp
+#include <iostream>
+#include <memory>
+
+// Абстрактный класс документа
+class Document {
+public:
+    virtual void open() = 0;
+    virtual ~Document() = default;
+};
+
+// Конкретные документы
+class WordDocument : public Document {
+public:
+    void open() override { std::cout << "Opening Word Document\n"; }
+};
+
+class PDFDocument : public Document {
+public:
+    void open() override { std::cout << "Opening PDF Document\n"; }
+};
+
+// Фабрика документов
+class DocumentFactory {
+public:
+    static std::unique_ptr<Document> createDocument(const std::string& type) {
+        if (type == "word") return std::make_unique<WordDocument>();
+        if (type == "pdf")  return std::make_unique<PDFDocument>();
+        return nullptr;
+    }
+};
+
+// Использование
+int main() {
+    auto doc = DocumentFactory::createDocument("pdf");
+    if (doc) doc->open(); // "Opening PDF Document"
+    return 0;
+}
+
+
+#include <iostream>
+#include <memory>
+
+// Абстрактный класс логгера
+class Logger {
+public:
+    virtual void log(const std::string& message) = 0;
+    virtual ~Logger() = default;
+};
+
+// Конкретные логгеры
+class FileLogger : public Logger {
+public:
+    void log(const std::string& message) override {
+        std::cout << "Log to file: " << message << "\n";
+    }
+};
+
+class ConsoleLogger : public Logger {
+public:
+    void log(const std::string& message) override {
+        std::cout << "Log to console: " << message << "\n";
+    }
+};
+
+// Абстрактная фабрика
+class LoggerFactory {
+public:
+    virtual std::unique_ptr<Logger> createLogger() = 0;
+    virtual ~LoggerFactory() = default;
+};
+
+// Конкретные фабрики
+class FileLoggerFactory : public LoggerFactory {
+public:
+    std::unique_ptr<Logger> createLogger() override {
+        return std::make_unique<FileLogger>();
+    }
+};
+
+class ConsoleLoggerFactory : public LoggerFactory {
+public:
+    std::unique_ptr<Logger> createLogger() override {
+        return std::make_unique<ConsoleLogger>();
+    }
+};
+
+// Использование
+void logMessage(LoggerFactory& factory, const std::string& msg) {
+    auto logger = factory.createLogger();
+    logger->log(msg);
+}
+
+int main() {
+    FileLoggerFactory fileFactory;
+    ConsoleLoggerFactory consoleFactory;
+
+    logMessage(fileFactory, "Error 404");    // Log to file: Error 404
+    logMessage(consoleFactory, "Warning!");  // Log to console: Warning!
+
+    return 0;
+}

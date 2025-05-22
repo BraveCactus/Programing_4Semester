@@ -1,0 +1,45 @@
+81. Минусы паттерна декоратор при реализации потокобезопасной очереди
+Проблемы:
+
+Накладные расходы на каждый уровень декорирования
+
+Сложность обеспечения сквозной потокобезопасности
+
+Потенциальные deadlock'и при вложенных блокировках
+
+Пример проблемного кода:
+
+cpp
+template<typename T>
+class Queue {
+public:
+    virtual void push(const T& item) = 0;
+    virtual bool pop(T& item) = 0;
+};
+
+template<typename T>
+class ThreadSafeQueue : public Queue<T> {
+    std::queue<T> q;
+    std::mutex mtx;
+public:
+    void push(const T& item) override {
+        std::lock_guard<std::mutex> lock(mtx);
+        q.push(item);
+    }
+    // ... аналогично pop
+};
+
+// Декоратор логирования
+template<typename T>
+class LoggingQueue : public Queue<T> {
+    Queue<T>* q;
+public:
+    LoggingQueue(Queue<T>* q) : q(q) {}
+    
+    void push(const T& item) override {
+        std::cout << "Pushing item\n";
+        q->push(item);  // Двойная блокировка если q - ThreadSafeQueue
+    }
+    // ... 
+};
+Решение: Использовать один уровень потокобезопасности и композицию вместо наследования.
