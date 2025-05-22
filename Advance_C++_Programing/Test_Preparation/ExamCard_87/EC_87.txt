@@ -1,0 +1,24 @@
+86. CRTP для полиморфного копирования
+Преимущества:
+
+Избегаем дублирования кода
+
+Статический полиморфизм
+
+Нет накладных расходов на виртуальные методы
+
+cpp
+template<typename Derived>
+class Cloneable {
+public:
+    Derived* clone() const {
+        return new Derived(static_cast<const Derived&>(*this));
+    }
+};
+
+class Circle : public Cloneable<Circle> {
+    // Нет необходимости переопределять clone
+};
+
+Circle c;
+auto c2 = c.clone(); // Правильный тип

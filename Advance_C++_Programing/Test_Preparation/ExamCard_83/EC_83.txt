@@ -1,5 +1,22 @@
 83.	Паттерн Фабрика
 
+class Shape {
+public:
+    virtual void draw() = 0;
+};
+
+class Circle : public Shape { /*...*/ };
+class Square : public Shape { /*...*/ };
+
+class ShapeFactory {
+public:
+    static Shape* create(const std::string& type) {
+        if (type == "circle") return new Circle();
+        if (type == "square") return new Square();
+        return nullptr;
+    }
+};
+
 1. Простая фабрика (Simple Factory)
 (Упрощённая версия, не является полноценным паттерном, но часто используется.)
 

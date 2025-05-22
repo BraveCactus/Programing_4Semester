@@ -1,0 +1,13 @@
+84. Фабрика для инициализации с разными аргументами
+
+class ShapeFactory {
+public:
+    template<typename T, typename... Args>
+    static Shape* create(Args&&... args) {
+        return new T(std::forward<Args>(args)...);
+    }
+};
+
+// Использование:
+auto circle = ShapeFactory::create<Circle>(10.0); // радиус
+auto square = ShapeFactory::create<Square>(5.0, "red"); // сторона и цвет
