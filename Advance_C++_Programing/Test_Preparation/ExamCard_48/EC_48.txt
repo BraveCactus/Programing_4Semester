@@ -1,0 +1,15 @@
+48. CV-квалификаторы при выводе типов.
+Правила:
+
+auto игнорирует const/volatile для ссылок
+
+auto& сохраняет cv-квалификаторы
+
+decltype сохраняет точный тип
+
+Пример:
+
+cpp
+const int x = 42;
+auto y = x; // int
+auto& z = x; // const int&

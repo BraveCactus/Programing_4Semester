@@ -1,0 +1,14 @@
+45. Способы инициализации shared_ptr.
+Через make_shared:
+
+cpp
+auto p = std::make_shared<int>(42);
+Через конструктор:
+
+cpp
+std::shared_ptr<int> p(new int(42));
+Из unique_ptr:
+
+cpp
+std::unique_ptr<int> up(new int(42));
+std::shared_ptr<int> sp = std::move(up);
