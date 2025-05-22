@@ -1,0 +1,22 @@
+17. «Наиболее неприятный анализ» в С++ и разные виды инициализации.
+Проблема: Компилятор может интерпретировать объявление как объявление функции.
+
+cpp
+class Timer { ... };
+class TimeKeeper {
+public:
+    TimeKeeper(const Timer& t);
+    ...
+};
+
+TimeKeeper time_keeper(Timer()); // объявляет функцию, а не объект
+Решение:
+
+Использовать {}
+
+cpp
+TimeKeeper time_keeper{Timer()}; // создает объект
+Или дополнительные скобки
+
+cpp
+TimeKeeper time_keeper((Timer())); // создает объект
