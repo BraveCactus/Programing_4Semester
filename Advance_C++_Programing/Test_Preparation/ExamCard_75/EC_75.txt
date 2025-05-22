@@ -1,0 +1,13 @@
+75. Универсальные ссылки и идеальная передача.
+Универсальные ссылки: Шаблонные rvalue-ссылки, которые могут связываться с lvalue и rvalue:
+
+cpp
+template <typename T>
+void foo(T&& arg); // arg - универсальная ссылка
+Идеальная передача: Сохранение категории значения (lvalue/rvalue) при передаче:
+
+cpp
+template <typename T>
+void wrapper(T&& arg) {
+    other_function(std::forward<T>(arg));
+}

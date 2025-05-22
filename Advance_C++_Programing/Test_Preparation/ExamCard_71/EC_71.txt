@@ -1,0 +1,17 @@
+71. Виды requires-expression.
+Простые требования:
+
+cpp
+requires { x.foo(); }
+Составные требования:
+
+cpp
+requires { { x + y } -> std::convertible_to<int>; }
+Требования типов:
+
+cpp
+requires { typename T::value_type; }
+Вложенные требования:
+
+cpp
+requires requires (T x) { requires std::is_integral_v<decltype(x)>; }

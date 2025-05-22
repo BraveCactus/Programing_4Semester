@@ -1,0 +1,18 @@
+72. Что такое концепт? Особенности синтаксиса ограничения функций концептами.
+Концепт: Именованное множество требований к шаблонным параметрам.
+
+Синтаксис:
+
+После template:
+
+cpp
+template <std::integral T>
+С requires clause:
+
+cpp
+template <typename T>
+requires std::integral<T>
+Сокращенный:
+
+cpp
+void foo(std::integral auto x);

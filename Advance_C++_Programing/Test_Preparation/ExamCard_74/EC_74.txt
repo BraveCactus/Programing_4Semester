@@ -1,0 +1,16 @@
+Концепт Hashable в C++
+Hashable — это концепт (требование к типу), который означает, что объекты этого типа можно использовать
+ в хеш-таблицах (std::unordered_set, std::unordered_map). Для этого тип должен:
+
+Поддерживать std::hash — специализацию std::hash<T> для данного типа.
+
+Иметь оператор == (для разрешения коллизий).
+
+#include <functional>
+#include <concepts>
+
+template <typename T>
+concept Hashable = requires(const T& obj) {
+    { std::hash<T>{}(obj) } -> std::convertible_to<std::size_t>;
+    { obj == obj } -> std::convertible_to<bool>;
+};
