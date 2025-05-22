@@ -1,0 +1,17 @@
+32. Как добавить в overloading set класса-наследника методы базового класса, являющиеся перегрузками виртуального метода?
+Проблема: Если в наследнике переопределить одну перегрузку, другие будут скрыты.
+
+Решение: Использовать using для добавления всех перегрузок:
+
+cpp
+class Base {
+public:
+    virtual void foo(int) {}
+    virtual void foo(double) {}
+};
+
+class Derived : public Base {
+public:
+    using Base::foo; // добавляет все перегрузки foo
+    void foo(int) override {}
+};

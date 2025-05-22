@@ -1,0 +1,12 @@
+35. RAII. Концепция.
+RAII (Resource Acquisition Is Initialization): Получение ресурса при инициализации объекта и освобождение при его разрушении.
+
+Пример:
+
+cpp
+class File {
+    FILE* file;
+public:
+    File(const char* name) : file(fopen(name, "r")) {}
+    ~File() { if (file) fclose(file); }
+};

@@ -1,0 +1,19 @@
+29. NVI. Пример.
+NVI (Non-Virtual Interface): Идиома, когда публичный интерфейс не виртуальный, а вызывает защищенные виртуальные методы.
+
+Пример:
+
+cpp
+class Base {
+public:
+    void foo() { // не виртуальный
+        fooImpl(); // виртуальный
+    }
+protected:
+    virtual void fooImpl() = 0;
+};
+
+class Derived : public Base {
+protected:
+    void fooImpl() override { ... }
+}
