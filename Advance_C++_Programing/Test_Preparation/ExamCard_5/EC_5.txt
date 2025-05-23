@@ -39,8 +39,8 @@ rebase:
     После git rebase main (из ветки feature):
 
     A --- B --- C (main)  
-            \  
-             D' --- E' (feature) 
+                \  
+                D' --- E' (feature) 
 
     (коммиты D и E пересоздаются как D' и E' с новыми хешами)
 
