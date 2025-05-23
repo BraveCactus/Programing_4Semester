@@ -1,0 +1,96 @@
+
+
+Copy-On-Write (COW) в C++
+Copy-On-Write (COW) — это оптимизационная техника, при которой копирование данных происходит только при модификации, а до этого объекты разделяют общие ресурсы.
+
+Этот подход часто используется в классах, работающих с большими данными (например, std::string в старых реализациях STL, QString в Qt).
+
+Как работает COW?
+Общие данные: Несколько объектов могут указывать на одни и те же данные.
+
+Копирование при записи: Когда один из объектов пытается изменить данные, создаётся новая копия (deep copy).
+
+Счётчик ссылок: Обычно используется для отслеживания, сколько объектов владеют данными.
+
+Пример COW для строки
+cpp
+#include <iostream>
+#include <cstring>
+
+class CowString {
+private:
+    struct Data {
+        char* str;
+        int refCount;  // Счётчик ссылок
+    };
+    Data* data;
+
+    // Увеличивает счётчик ссылок
+    void attach(Data* newData) {
+        data = newData;
+        if (data) data->refCount++;
+    }
+
+    // Уменьшает счётчик и освобождает память при необходимости
+    void detach() {
+        if (data && --data->refCount == 0) {
+            delete[] data->str;
+            delete data;
+        }
+    }
+
+public:
+    // Конструктор
+    CowString(const char* s = "") {
+        data = new Data{new char[strlen(s) + 1], 1};
+        strcpy(data->str, s);
+    }
+
+    // Конструктор копирования (разделяет данные)
+    CowString(const CowString& other) {
+        attach(other.data);
+    }
+
+    // Оператор присваивания
+    CowString& operator=(const CowString& other) {
+        if (this != &other) {
+            detach();      // Освобождаем старые данные
+            attach(other.data);  // Разделяем новые
+        }
+        return *this;
+    }
+
+    // Деструктор
+    ~CowString() {
+        detach();
+    }
+
+    // Доступ к данным (без модификации)
+    const char* c_str() const {
+        return data ? data->str : "";
+    }
+
+    // Модификация данных (копирование при записи)
+    void modify(size_t pos, char c) {
+        if (!data || data->refCount > 1) {
+            // Создаём копию, если данные разделяются
+            Data* newData = new Data{new char[strlen(data->str) + 1], 1};
+            strcpy(newData->str, data->str);
+            detach();  // Уменьшаем счётчик старых данных
+            data = newData;
+        }
+        data->str[pos] = c;  // Модифицируем
+    }
+};
+
+int main() {
+    CowString s1 = "Hello";
+    CowString s2 = s1;  // Данные разделяются (refCount = 2)
+
+    std::cout << s1.c_str() << " | " << s2.c_str() << "\n";  // Hello | Hello
+
+    s2.modify(0, 'J');  // Происходит копирование (COW)
+    std::cout << s1.c_str() << " | " << s2.c_str() << "\n";  // Hello | Jello
+
+    return 0;
+}

@@ -1,16 +1,24 @@
-class Shape {
-public:
-    virtual void draw() = 0;
-};
+86. CRTP для полиморфного копирования
+Преимущества:
 
-class Circle : public Shape { /*...*/ };
-class Square : public Shape { /*...*/ };
+Избегаем дублирования кода
 
-class ShapeFactory {
+Статический полиморфизм
+
+Нет накладных расходов на виртуальные методы
+
+cpp
+template<typename Derived>
+class Cloneable {
 public:
-    static Shape* create(const std::string& type) {
-        if (type == "circle") return new Circle();
-        if (type == "square") return new Square();
-        return nullptr;
+    Derived* clone() const {
+        return new Derived(static_cast<const Derived&>(*this));
     }
 };
+
+class Circle : public Cloneable<Circle> {
+    // Нет необходимости переопределять clone
+};
+
+Circle c;
+auto c2 = c.clone(); // Правильный тип

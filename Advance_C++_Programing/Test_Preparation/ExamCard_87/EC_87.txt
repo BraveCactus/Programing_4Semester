@@ -1,24 +1,95 @@
-86. CRTP для полиморфного копирования
-Преимущества:
+87.	Паттерн Мост
+Паттерн "Мост" (Bridge) — это структурный шаблон проектирования, который разделяет абстракцию и реализацию так,
+чтобы они могли изменяться независимо друг от друга.
 
-Избегаем дублирования кода
+Проблема без Bridge
+Допустим, у нас есть классы Circle и Square, которые могут быть разных цветов (Red, Blue).
+Без Bridge пришлось бы создавать подклассы для всех комбинаций:
 
-Статический полиморфизм
+RedCircle, BlueCircle
 
-Нет накладных расходов на виртуальные методы
+RedSquare, BlueSquare
 
+Это приводит к взрыву классов (комбинаторному росту).
+
+Решение с Bridge
+Разделим фигуры (абстракция) и цвета (реализация).
+
+Код на C++
 cpp
-template<typename Derived>
-class Cloneable {
+#include <iostream>
+#include <string>
+
+// Implementor (интерфейс для цвета)
+class Color {
 public:
-    Derived* clone() const {
-        return new Derived(static_cast<const Derived&>(*this));
+    virtual ~Color() = default;
+    virtual std::string applyColor() const = 0;
+};
+
+// Concrete Implementors (конкретные цвета)
+class RedColor : public Color {
+public:
+    std::string applyColor() const override {
+        return "Red";
     }
 };
 
-class Circle : public Cloneable<Circle> {
-    // Нет необходимости переопределять clone
+class BlueColor : public Color {
+public:
+    std::string applyColor() const override {
+        return "Blue";
+    }
 };
 
-Circle c;
-auto c2 = c.clone(); // Правильный тип
+// Abstraction (интерфейс для фигуры)
+class Shape {
+protected:
+    Color* color;  // Мост между Shape и Color (композиция)
+public:
+    Shape(Color* color) : color(color) {}
+    virtual ~Shape() = default;
+    virtual void draw() const = 0;
+};
+
+// Refined Abstractions (конкретные фигуры)
+class Circle : public Shape {
+public:
+    Circle(Color* color) : Shape(color) {}
+
+    void draw() const override {
+        std::cout << "Circle (" << color->applyColor() << ")" << std::endl;
+    }
+};
+
+class Square : public Shape {
+public:
+    Square(Color* color) : Shape(color) {}
+
+    void draw() const override {
+        std::cout << "Square (" << color->applyColor() << ")" << std::endl;
+    }
+};
+
+// Клиентский код
+int main() {
+    // Создаём цвета (реализации)
+    Color* red = new RedColor();
+    Color* blue = new BlueColor();
+
+    // Создаём фигуры (абстракции), передавая цвета
+    Shape* redCircle = new Circle(red);
+    Shape* blueSquare = new Square(blue);
+
+    // Рисуем фигуры
+    redCircle->draw();  // Вывод: Circle (Red)
+    blueSquare->draw(); // Вывод: Square (Blue)
+
+    // Освобождаем память
+    delete red;
+    delete blue;
+    delete redCircle;
+    delete blueSquare;
+
+    return 0;
+}

@@ -1,0 +1,102 @@
+89. Паттерн Компоновщик
+
+Паттерн "Компоновщик" — это структурный шаблон проектирования, который позволяет собирать объекты в древовидные структуры и работать с ними как с единым объектом.
+
+Зачем он нужен?
+Упрощает работу с древовидными структурами (например, файловая система, GUI-элементы).
+
+Позволяет единообразно обрабатывать как отдельные объекты, так и их группы.
+
+Избавляет от проверок "это лист или контейнер?" в клиентском коде.
+
+Структура паттерна
+Component — абстрактный класс/интерфейс для всех элементов дерева.
+
+Leaf (лист) — конечный объект, не имеющий дочерних элементов.
+
+Composite (контейнер) — содержит другие Component (листья или другие контейнеры).
+
+Пример: Файловая система
+Допустим, у нас есть файлы и папки, где папки могут содержать другие файлы и папки.
+
+1. Базовый компонент (FileSystemComponent)
+cpp
+#include <iostream>
+#include <vector>
+#include <memory>
+
+// Абстрактный класс для файлов и папок
+class FileSystemComponent {
+public:
+    virtual ~FileSystemComponent() = default;
+    virtual void display(int depth = 0) const = 0;
+};
+2. Лист (File — файл)
+cpp
+// Конечный объект (файл)
+class File : public FileSystemComponent {
+public:
+    File(const std::string& name) : name_(name) {}
+
+    void display(int depth) const override {
+        std::cout << std::string(depth, '\t') << "📄 " << name_ << std::endl;
+    }
+
+private:
+    std::string name_;
+};
+3. Контейнер (Folder — папка)
+cpp
+// Контейнер (папка)
+class Folder : public FileSystemComponent {
+public:
+    Folder(const std::string& name) : name_(name) {}
+
+    void addComponent(std::shared_ptr<FileSystemComponent> component) {
+        components_.push_back(component);
+    }
+
+    void display(int depth) const override {
+        std::cout << std::string(depth, '\t') << "📁 " << name_ << std::endl;
+        for (const auto& component : components_) {
+            component->display(depth + 1);
+        }
+    }
+
+private:
+    std::string name_;
+    std::vector<std::shared_ptr<FileSystemComponent>> components_;
+};
+4. Клиентский код
+cpp
+int main() {
+    // Создаем файлы
+    auto file1 = std::make_shared<File>("document.txt");
+    auto file2 = std::make_shared<File>("image.jpg");
+    auto file3 = std::make_shared<File>("notes.txt");
+
+    // Создаем папки
+    auto folder1 = std::make_shared<Folder>("Documents");
+    auto folder2 = std::make_shared<Folder>("Pictures");
+    auto rootFolder = std::make_shared<Folder>("Root");
+
+    // Добавляем файлы в папки
+    folder1->addComponent(file1);
+    folder1->addComponent(file3);
+    folder2->addComponent(file2);
+
+    // Добавляем папки в корень
+    rootFolder->addComponent(folder1);
+    rootFolder->addComponent(folder2);
+
+    // Выводим структуру
+    rootFolder->display();
+}
+Вывод:
+
+📁 Root
+	📁 Documents
+		📄 document.txt
+		📄 notes.txt
+	📁 Pictures
+		📄 image.jpg

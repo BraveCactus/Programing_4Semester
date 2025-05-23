@@ -1,0 +1,107 @@
+89. Паттерн Строитель
+
+Паттерн "Строитель" — это порождающий шаблон проектирования, который позволяет пошагово создавать сложные объекты, отделяя процесс конструирования от его представления.
+
+Зачем он нужен?
+Упрощает создание объектов с большим количеством параметров.
+
+Позволяет создавать разные представления объекта, используя один и тот же процесс конструирования.
+
+Избавляет от "телескопических конструкторов" (когда в классе много перегруженных конструкторов с разными параметрами).
+
+Структура паттерна
+Product — сложный объект, который нужно создать.
+
+Builder — абстрактный интерфейс для создания частей объекта.
+
+ConcreteBuilder — конкретная реализация строителя, собирает объект.
+
+Director (опционально) — управляет процессом построения (если логика создания стандартная).
+
+Client — использует Builder для создания объекта.
+
+Пример: Строитель для класса Car
+Допустим, у нас есть класс Car с множеством опциональных параметров (тип двигателя, кол-во дверей, цвет и т. д.).
+
+1. Продукт (Car)
+cpp
+class Car {
+public:
+    void setEngine(const std::string& engine) { engine_ = engine; }
+    void setSeats(int seats) { seats_ = seats; }
+    void setColor(const std::string& color) { color_ = color; }
+    void setHasGPS(bool hasGPS) { hasGPS_ = hasGPS; }
+
+    void showDetails() const {
+        std::cout << "Car details:\n"
+                  << " - Engine: " << engine_ << "\n"
+                  << " - Seats: " << seats_ << "\n"
+                  << " - Color: " << color_ << "\n"
+                  << " - GPS: " << (hasGPS_ ? "Yes" : "No") << "\n";
+    }
+
+private:
+    std::string engine_;
+    int seats_ = 0;
+    std::string color_;
+    bool hasGPS_ = false;
+};
+2. Абстрактный строитель (CarBuilder)
+cpp
+class CarBuilder {
+public:
+    virtual ~CarBuilder() = default;
+    virtual void buildEngine() = 0;
+    virtual void buildSeats() = 0;
+    virtual void buildColor() = 0;
+    virtual void buildGPS() = 0;
+    virtual Car getResult() = 0;
+};
+3. Конкретный строитель (SportsCarBuilder)
+cpp
+class SportsCarBuilder : public CarBuilder {
+public:
+    void buildEngine() override { car_.setEngine("V8"); }
+    void buildSeats() override { car_.setSeats(2); }
+    void buildColor() override { car_.setColor("Red"); }
+    void buildGPS() override { car_.setHasGPS(true); }
+    Car getResult() override { return car_; }
+
+private:
+    Car car_;
+};
+4. Директор (Director) (опционально)
+cpp
+class Director {
+public:
+    void setBuilder(CarBuilder* builder) { builder_ = builder; }
+
+    void constructCar() {
+        builder_->buildEngine();
+        builder_->buildSeats();
+        builder_->buildColor();
+        builder_->buildGPS();
+    }
+
+private:
+    CarBuilder* builder_;
+};
+5. Клиентский код
+cpp
+int main() {
+    Director director;
+    SportsCarBuilder builder;
+
+    director.setBuilder(&builder);
+    director.constructCar();  // Строим машину по шагам
+
+    Car car = builder.getResult();
+    car.showDetails();
+}
+Вывод:
+
+Car details:
+ - Engine: V8
+ - Seats: 2
+ - Color: Red
+ - GPS: Yes
